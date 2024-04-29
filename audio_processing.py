@@ -10,9 +10,11 @@
 
 import numpy as np
 import librosa.display
+import matplotlib.pyplot as plt
 
 # import stereo dataset
-stereo, sampling_rate = librosa.load("/home/s4290755/Downloads/sample_sound_data.wav", mono=False)
+stereo, sampling_rate = librosa.load("/home/ioannistassioulas/Downloads/PDFs for Thesis/Thesis Audio/first_sample.wav",
+                                     mono=False)
 
 
 def count_peak(array):
@@ -46,15 +48,17 @@ def count_peak_diff(array):
     gives a frequency for spike rate
     """
 
-    spike_numbers = np.zeros([len(array), len(array.transpose())])
+    left_channel = np.zeros(len(array.transpose()))
+    right_channel = np.zeros(len(array.transpose()))
 
     for i in range(len(array.transpose())):
-        mean = np.mean(array.tranpose()[i])  # calculate the mean for certain sample time
-        for j in range(len(array)):
-            spike_rate = (array[j][i] - mean) * 10  # spike rate determined by comparison to mean
-            spike_numbers[j][i] = spike_rate  # assign spike rate to corresponding spot on spike matrix
+        spike_rate = np.round((array[0][i] - array[1][i]) * 1000)  # spike rate determined by comparison to mean
+        if spike_rate >= 0:  # assign spike rate to corresponding spot on spike matrix
+            left_channel[i] = np.abs(spike_rate)
+        else:
+            right_channel[i] = np.abs(spike_rate)
 
-    return spike_numbers
+    return left_channel, right_channel
 
 
 def count_threshold_crossing(array, threshold):
@@ -79,3 +83,16 @@ def zero_crossing(array):
     spike_data = np.zeros([len(array), len(array.transpose())])
 
     return spike_data
+
+
+def display_waves(array, sampling):
+    """
+    print out the waveforms of each of the channels passed through
+    Input: array, a NxM array of N channels and M samples giving audio intensity
+    Output
+    """
+    plt.figure().set_figwidth(12)
+    librosa.display.waveshow(array[1], sr=sampling, label="second source", color="blue")
+    librosa.display.waveshow(array[0], sr=sampling, label="first source", color="red")
+    plt.legend()
+    plt.show()
