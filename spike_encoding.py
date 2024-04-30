@@ -8,7 +8,14 @@ import snntorch as snn
 import torch
 
 stereo, sampling_rate = librosa.load("/home/ioannistassioulas/Downloads/PDFs for Thesis/Thesis Audio/first_sample.wav", mono=False)
-audio_processing.display_waves(stereo, sampling_rate)
+
+plt.figure().set_figwidth(12)
+librosa.display.waveshow(stereo[1], sr=sampling_rate, label="second source", color="blue")
+librosa.display.waveshow(stereo[0], sr=sampling_rate, label="first source", color="red")
+plt.legend()
+plt.show()
+
+
 left_mic, right_mic = audio_processing.count_peak_diff(stereo)  # create tensor of spike info
 
 left_tensor = torch.Tensor(left_mic)

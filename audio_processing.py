@@ -10,7 +10,11 @@
 
 import numpy as np
 import librosa.display
+# import matplotlib
+# matplotlib.use('TkAgg')
 import matplotlib.pyplot as plt
+
+
 
 # import stereo dataset
 stereo, sampling_rate = librosa.load("/home/ioannistassioulas/Downloads/PDFs for Thesis/Thesis Audio/first_sample.wav",
@@ -91,8 +95,3 @@ def display_waves(array, sampling):
     Input: array, a NxM array of N channels and M samples giving audio intensity
     Output
     """
-    plt.figure().set_figwidth(12)
-    librosa.display.waveshow(array[1], sr=sampling, label="second source", color="blue")
-    librosa.display.waveshow(array[0], sr=sampling, label="first source", color="red")
-    plt.legend()
-    plt.show()
