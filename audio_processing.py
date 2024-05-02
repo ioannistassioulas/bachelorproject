@@ -93,22 +93,23 @@ def zero_crossing(array, sr):
         channel = array[i]
         sign = np.sign(channel)
         current = sign[0]
-        print(len(sign))
+        cutoff = 0.0025
+
         output = np.array([])  # crossing points
         values = np.array([])  # values
 
         for j in range(len(sign)):
-            if sign[j] != current:
+            if sign[j] != current and np.abs(channel[j]) > cutoff:
                 output = np.append(output, j/sr)
                 values = np.append(values, channel[j])
                 current = sign[j]
-
         spike_data[i] = output
         spike_values[i] = values
 
     return spike_data, spike_values
 
-
+def angle_by_itd(time):
+    return np.arccos(time * 343/0.3)
 def display_waves(stereo, sampling):
     """
     print out the waveforms of each of the channels passed through
