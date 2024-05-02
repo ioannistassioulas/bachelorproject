@@ -77,21 +77,46 @@ def count_threshold_crossing(array, threshold):
     return spike_numbers
 
 
-def zero_crossing(array):
+def zero_crossing(array, sr):
     """
     Encode spike data by writing down zero crossings
     :param array: data containing audio information of each channel
-    :return: spike data in the form of matrix
+    :param sr: sampling rate used to convert index number into timeslot
+    :return: spike_data, array of timestamps where zero is crossed
+    :return: spike_values, array of intensity values where zero crossing is recorded
     """
 
-    spike_data = np.zeros([len(array), len(array.transpose())])
+    spike_data = np.zeros(len(array), dtype=object)
+    spike_values = np.zeros(len(array), dtype=object)
 
-    return spike_data
+    for i in range(len(array)):
+        channel = array[i]
+        sign = np.sign(channel)
+        current = sign[0]
+        print(len(sign))
+        output = np.array([])  # crossing points
+        values = np.array([])  # values
+
+        for j in range(len(sign)):
+            if sign[j] != current:
+                output = np.append(output, j/sr)
+                values = np.append(values, channel[j])
+                current = sign[j]
+
+        spike_data[i] = output
+        spike_values[i] = values
+
+    return spike_data, spike_values
 
 
-def display_waves(array, sampling):
+def display_waves(stereo, sampling):
     """
     print out the waveforms of each of the channels passed through
     Input: array, a NxM array of N channels and M samples giving audio intensity
     Output
     """
+    plt.figure().set_figwidth(12)
+    librosa.display.waveshow(stereo[0], sr=sampling_rate, label="second source", color="blue")
+    librosa.display.waveshow(stereo[1], sr=sampling_rate, label="first source", color="red")
+    plt.legend()
+    plt.show()
