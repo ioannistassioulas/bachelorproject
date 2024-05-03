@@ -108,6 +108,15 @@ def zero_crossing(array, sr):
 
     return spike_data, spike_values
 
+def name_parse(angle, frequency):
+    """
+    :param angle: angle of the specific dataname
+    :param frequency: frequency of sound wave
+    :return: filename to be appended to end of string
+    """
+    filename = f"{angle}_deg_{frequency}_Hz"
+    return filename
+
 def angle_by_itd(time):
     return np.arccos(time * 343/0.3)
 def display_waves(stereo, sampling):

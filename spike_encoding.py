@@ -2,39 +2,42 @@
 import snntorch.spikegen
 
 import audio_processing
+from pathlib import Path
 from audio_processing import *
 import snntorch as snn
 import torch
 
-stereo, sampling_rate = librosa.load("/home/ioannistassioulas/PycharmProjects/pythonProject/bachelorproject/datasets"
-                                     "/30_deg_200_Hz.wav", mono=False)
+# download sound files and separate into spike data
+stereo, sampling_rate = librosa.load(, mono=False)
 spike_data, spike_values = audio_processing.zero_crossing(stereo, sampling_rate)  # generate spike data values
 
-time_difference = np.abs(spike_data[1] - spike_data[0])
-ground_truth = np.cos(np.pi/6) * 0.3 / 343
+# metadata involves array of all info in the order of angles, time difference, frequency to parse through in
+# the function calls
+metadata = np.array([[15, 30, 45, 60, 75],
+                     [0.000844834, 0.000757457, 0.000618461, 0.000437318, 0.000226372],
+                     [200, 500, 800, 2000, 5000, 8000]], dtype=object)
+
+# determine the inter aural time difference from the data amassed
+time_difference = np.abs(spike_data[1] - spike_data[0])  # find difference in zero crossings from both channels
 
 itd_experimental_mean = np.mean(time_difference)
 itd_experimental_error = np.std(time_difference)
-itd_theoretical = 0.000770
+itd_theoretical = 0.000770  # read directly from audacity
 
+# determine the angle difference as per the derivation from Hugh's paper
 angle_mean = np.rad2deg(audio_processing.angle_by_itd(itd_experimental_mean))
 angle_theory = np.rad2deg(audio_processing.angle_by_itd(itd_theoretical))
 
+# plot inter aural time difference alongside the angle in the legend
 plt.plot(spike_data[0], time_difference, label=f"experimental data, angle = {angle_mean}")  # measured timestep difference
-plt.axhline(ground_truth, color="red", label=f"ground truth, angle = {angle_theory}")  # ground truth as per our formula
+plt.axhline(itd_theoretical, color="red", label=f"ground truth, angle = {angle_theory}")  # ground truth as per our formula
 plt.legend()
 plt.show()
 
-
-
-# audio_processing.display_waves(stereo, sampling_rate)
-# plt.figure().set_figwidth(12)
-# librosa.display.waveshow(stereo[0], sr=sampling_rate, marker=".", color="blue", axis="time")
-# plt.scatter(timestep, [0] * len(timestep), label="points", color="red")
-# plt.xlim([0, 0.1])
-# plt.legend()
-# plt.show()
-
-# left_tensor = torch.Tensor(left_mic)
-# right_tensor = torch.Tensor(right_mic)
+# time differences to encode while creating sample synthetic data (frequency independent)
+# 15 deg itd = 0.000844834 s
+# 30 deg itd = 0.000757457 s
+# 45 deg itd = 0.000618461 s
+# 60 deg itd = 0.000437318 s
+# 75 deg itd = 0.000226372 s
 
