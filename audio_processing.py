@@ -14,8 +14,6 @@ import librosa.display
 # matplotlib.use('TkAgg')
 import matplotlib.pyplot as plt
 
-
-
 # import stereo dataset
 stereo, sampling_rate = librosa.load("/home/ioannistassioulas/Downloads/PDFs for Thesis/Thesis Audio/first_sample.wav",
                                      mono=False)
@@ -93,14 +91,14 @@ def zero_crossing(array, sr):
         channel = array[i]
         sign = np.sign(channel)
         current = sign[0]
-        cutoff = 0.0025
+        cutoff = 0.1
 
         output = np.array([])  # crossing points
         values = np.array([])  # values
 
         for j in range(len(sign)):
             if sign[j] != current and np.abs(channel[j]) > cutoff:
-                output = np.append(output, j/sr)
+                output = np.append(output, j / sr)
                 values = np.append(values, channel[j])
                 current = sign[j]
         spike_data[i] = output
@@ -108,17 +106,25 @@ def zero_crossing(array, sr):
 
     return spike_data, spike_values
 
-def name_parse(angle, frequency):
+
+def name_parse(direc, angle, frequency):
     """
+    :param home: destination of dataset files
     :param angle: angle of the specific dataname
     :param frequency: frequency of sound wave
     :return: filename to be appended to end of string
     """
-    filename = f"{angle}_deg_{frequency}_Hz"
+    filename = direc + f"/{angle}_deg_{frequency}_Hz.wav"
     return filename
 
-def angle_by_itd(time):
-    return np.arccos(time * 343/0.3)
+
+def angle_by_itd(*time):
+    angle = np.array([])
+    for i in range(len(time)):
+        angle = np.append(angle, np.arccos(time[i] * 343 / 0.3))
+    return angle
+
+
 def display_waves(stereo, sampling):
     """
     print out the waveforms of each of the channels passed through

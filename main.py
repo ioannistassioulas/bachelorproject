@@ -66,10 +66,13 @@
 # # show()
 
 import os
+import audio_processing as ap
 
 home = os.path.expanduser("~")
-test_dir = home + "/PycharmProjects/pythonProject/bachelorproject/"
+test_dir = home + "/PycharmProjects/pythonProject/bachelorproject/datasets/synthetic_data"
 print(test_dir)
 test = os.path.isdir(test_dir)
-print(test)
+loc = ap.name_parse(test_dir, 30, 200)
+print(loc)
+print(os.path.isfile(loc))
 print(home)
