@@ -17,13 +17,11 @@ import torch
 import os
 
 # import stereo dataset
-stereo, sampling_rate = librosa.load("/home/ioannistassioulas/Downloads/PDFs for Thesis/Thesis Audio/first_sample.wav",
-                                     mono=False)
 
 
 def count_peak(array):
     """
-    Purpose: pass multichannel audiofile dataset through and return array of spikes
+    Pass multichannel audiofile dataset through and return array of spikes
     indicating which channel produced the highest intensity at given sample.
 
     :param array: a NxM array of N channels and M samples giving audio intensity
@@ -65,16 +63,16 @@ def count_peak_diff(array):
     return left_channel, right_channel
 
 
-def count_threshold_crossing(array, threshold):
+def count_peak_ratio(array):
     """
-    Count spike encoding by looking at threshold crossing
-    :param array: a NxM array of N channels and M samples, each entry records audio intensity
-    :param threshold:
-    :return: spike_numbers, a NxM array of N channels and M samples giving value for how
-    many spikes to return for each entry
+    Count the ratio of the peak of each array at each timestep (left over right)
+    :param array: the 2 channel audio source
+    :return: ratio
     """
-    spike_numbers = np.zeros([len(array), len(array.transpose())])
-    return spike_numbers
+    left_ear = array[0]
+    right_ear = array[1]
+
+    return left_ear / right_ear
 
 
 def zero_crossing(array, sr, cutoff):
@@ -89,9 +87,11 @@ def zero_crossing(array, sr, cutoff):
 
     spike_data = np.zeros(len(array), dtype=object)
     spike_values = np.zeros(len(array), dtype=object)
+    start_index = np.int(np.round(cutoff * sr))
 
     for i in range(len(array)):
         channel = array[i]
+        channel = channel[start_index:]
         sign = np.sign(channel)
         current = sign[0]
 
@@ -99,7 +99,7 @@ def zero_crossing(array, sr, cutoff):
         values = np.array([])  # values
 
         for j in range(len(sign)):
-            if sign[j] != current and np.abs(channel[j]) > cutoff:
+            if sign[j] != current:
                 output = np.append(output, j / sr)
                 values = np.append(values, channel[j])
                 current = sign[j]
@@ -111,7 +111,7 @@ def zero_crossing(array, sr, cutoff):
 
 def name_parse(direc, angle, frequency):
     """
-    :param home: destination of dataset files
+    :param direc: destination of dataset files
     :param angle: angle of the specific dataname
     :param frequency: frequency of sound wave
     :return: filename to be appended to end of string
