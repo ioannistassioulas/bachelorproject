@@ -16,7 +16,8 @@ from audio_processing import *
 # level difference in the simulations
 metadata = np.array([[15, 30, 45, 60, 75], [200, 500, 800, 2000, 5000, 8000],
                      [0.000844834, 0.000757457, 0.000618461, 0.000437318, 0.000226372],
-                     np.zeros(5*6), np.zeros(5*6), ["red", "blue", "orange", "green", "black", "brown"]], dtype=object)
+                     np.zeros(5 * 6), np.zeros(5 * 6), ["red", "blue", "orange", "green", "black", "brown"]],
+                    dtype=object)
 
 # determine the directory location wrt current working directory
 home = os.getcwd()
@@ -28,7 +29,10 @@ for i in range(len(metadata[0])):  # parse through all angles
         # download sound files and separate into spike datafile
         loc = audio_processing.name_parse(database, metadata[0][i], metadata[1][j])
         stereo, sampling_rate = librosa.load(loc, mono=False)
-        spike_data, spike_values = audio_processing.zero_crossing(stereo, sampling_rate, 0.05)  # generate spike data values
+
+        # create data for ITD
+        spike_data, spike_values = audio_processing.zero_crossing(stereo, sampling_rate,
+                                                                  0.001)  # generate spike data values
 
         # fix any broadcasting issues
         length = sorted([spike_data[0], spike_data[1]], key=len)
@@ -37,24 +41,22 @@ for i in range(len(metadata[0])):  # parse through all angles
 
         # determine the inter aural time difference from the data amassed
         time_difference = np.abs(spike_data[1] - spike_data[0])  # find difference in zero crossings from both channels
-        metadata[3][(i*6) + j] = np.mean(time_difference)  # return mean into metadata super array
+        metadata[3][(i * 6) + j] = np.mean(time_difference)  # return mean into metadata super array
 
-        # determine the interaural level difference from data amassed per timestep
-        max_level_difference = np.nanmean(np.abs(audio_processing.count_peak_ratio(stereo)))
-        metadata[4][6*i + j] = max_level_difference
+        # determine the inter aural level difference from data amassed per sample step
+        max_level_difference = np.abs(np.nanmean(audio_processing.count_peak_ratio(stereo)))
+        metadata[4][(i * 6) + j] = max_level_difference
 
 # determine the angle difference as per the derivation from Hugh's paper
 angle_mean = np.reshape(np.rad2deg(audio_processing.angle_by_itd(*metadata[3])), [5, 6])
 angle_theory = np.rad2deg(audio_processing.angle_by_itd(*metadata[2]))
 
-print(angle_mean)
-print(angle_theory)
+level_mean = np.reshape(metadata[4], [5, 6]).transpose()  # now it goes frequency, angle instead of angle, frequency
 
-level_mean = np.reshape(metadata[4], [5, 6]).transpose()
 # plot inter aural time difference alongside the angle in the legend
 # comparing performance of different frequencies at different angles
 
-# change color for each and put on one graph
+# change color for each and put on one graph - DONE
 # log distribution of 25 points from 0 to 8000 Hz
 # real world data try out
 # cutoff by counting
@@ -69,7 +71,6 @@ for i in range(5):
 
 plt.legend()
 plt.show()
-
 
 # create graph of interaural level difference as a function of angle, by frequency
 # polar plot to compare
