@@ -10,9 +10,11 @@
 
 import numpy as np
 import librosa.display
-# import matplotlib
-# matplotlib.use('TkAgg')
 import matplotlib.pyplot as plt
+from pathlib import Path
+import snntorch as snn
+import torch
+import os
 
 # import stereo dataset
 stereo, sampling_rate = librosa.load("/home/ioannistassioulas/Downloads/PDFs for Thesis/Thesis Audio/first_sample.wav",
@@ -75,11 +77,12 @@ def count_threshold_crossing(array, threshold):
     return spike_numbers
 
 
-def zero_crossing(array, sr):
+def zero_crossing(array, sr, cutoff):
     """
     Encode spike data by writing down zero crossings
     :param array: data containing audio information of each channel
     :param sr: sampling rate used to convert index number into timeslot
+    :param cutoff: cutoff potential to prevent overcounting
     :return: spike_data, array of timestamps where zero is crossed
     :return: spike_values, array of intensity values where zero crossing is recorded
     """
@@ -91,7 +94,6 @@ def zero_crossing(array, sr):
         channel = array[i]
         sign = np.sign(channel)
         current = sign[0]
-        cutoff = 0.1
 
         output = np.array([])  # crossing points
         values = np.array([])  # values

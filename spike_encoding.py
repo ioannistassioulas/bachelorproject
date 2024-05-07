@@ -2,11 +2,7 @@
 import snntorch.spikegen
 
 import audio_processing
-from pathlib import Path
 from audio_processing import *
-import snntorch as snn
-import torch
-import os
 
 # metadata involves array of all info in the order of angles, frequency to parse through in
 # the function calls, and then ground truth time difference to compare,
@@ -15,15 +11,15 @@ metadata = np.array([[15, 30, 45, 60, 75], [200, 500, 800, 2000, 5000, 8000],
                      [0.000844834, 0.000757457, 0.000618461, 0.000437318, 0.000226372],
                      np.zeros(5*6)], dtype=object)
 
-home = os.path.expanduser("~")
-database = home + "/PycharmProjects/pythonProject/bachelorproject/datasets/synthetic_data"
+home = os.getcwd()
+database = home + "/datasets/synthetic_data"
 
 for i in range(len(metadata[0])):
     for j in range(len(metadata[1])):
         # download sound files and separate into spike datafile
         loc = audio_processing.name_parse(database, metadata[0][i], metadata[1][j])
         stereo, sampling_rate = librosa.load(loc, mono=False)
-        spike_data, spike_values = audio_processing.zero_crossing(stereo, sampling_rate)  # generate spike data values
+        spike_data, spike_values = audio_processing.zero_crossing(stereo, sampling_rate, 0.05)  # generate spike data values
 
         # fix any broadcasting issues
         length = sorted([spike_data[0], spike_data[1]], key=len)
@@ -32,9 +28,8 @@ for i in range(len(metadata[0])):
 
         # determine the inter aural time difference from the data amassed
         time_difference = np.abs(spike_data[1] - spike_data[0])  # find difference in zero crossings from both channels
-
         metadata[3][(i*6) + j] = np.mean(time_difference)
-        print(f"angle is {np.rad2deg(np.arccos(343 * np.mean(time_difference)/0.3))} for angle {metadata[0][i]} and frequency {metadata[1][j]}")# encode experimental data
+        # print(f"angle is {np.rad2deg(np.arccos(343 * np.mean(time_difference)/0.3))} for angle {metadata[0][i]} and frequency {metadata[1][j]}")# encode experimental data
         # itd_experimental_error = np.std(time_difference)
 
 # determine the angle difference as per the derivation from Hugh's paper
