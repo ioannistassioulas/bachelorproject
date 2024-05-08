@@ -15,6 +15,8 @@ from pathlib import Path
 import snntorch as snn
 import torch
 import os
+from matplotlib import colors as mcolors
+import pandas as pd
 
 # import stereo dataset
 
@@ -38,6 +40,13 @@ def count_peak(array):
                 spike_numbers[j][i] = 1
 
     return spike_numbers
+
+
+def peak_diff(array):
+    left_channel = array[0]
+    right_channel = array[1]
+
+    return left_channel - right_channel
 
 
 def count_peak_diff(array):
@@ -87,9 +96,10 @@ def zero_crossing(array, sr, cutoff):
 
     spike_data = np.zeros(len(array), dtype=object)
     spike_values = np.zeros(len(array), dtype=object)
-    start_index = np.int(np.round(cutoff * sr))
+    start_index = np.int(np.round(cutoff * sr)) + 1  # index of specified cutoff value
 
     for i in range(len(array)):
+        # take first array and record at cutoff index
         channel = array[i]
         channel = channel[start_index:]
         sign = np.sign(channel)
@@ -120,14 +130,15 @@ def name_parse(direc, angle, frequency):
     return filename
 
 
-def angle_by_itd(*time):
+def angle_by_itd(distance, *time):
     angle = np.array([])
     for i in range(len(time)):
-        angle = np.append(angle, np.arccos(time[i] * 343 / 0.3))
+        angle = np.append(angle, np.arcsin(time[i] * 343 / distance))
+
     return angle
 
 
-def display_waves(stereo, sampling):
+def display_waves(stereo, sampling_rate):
     """
     print out the waveforms of each of the channels passed through
     Input: array, a NxM array of N channels and M samples giving audio intensity
@@ -138,3 +149,7 @@ def display_waves(stereo, sampling):
     librosa.display.waveshow(stereo[1], sr=sampling_rate, label="first source", color="red")
     plt.legend()
     plt.show()
+
+
+def cross_correlation(first, second):
+    return np.sum(first * second) *
