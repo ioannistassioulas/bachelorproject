@@ -26,6 +26,7 @@ database_gt = home + "/datasets/ground truth"
 
 location = [None] * 24
 filename = [None] * 24
+avg = [None] * 24
 
 # read pickle files inside of data
 for i in range(24):
@@ -34,34 +35,50 @@ for i in range(24):
     filename[i] = database + df[0] + ".wav"
     location[i] = np.array(df[3][0][0])
 
-# location of microphones, use channel 1 for left ear and channel 3 for right ear
-left_ear = np.array([-0.0267, 0.0343, 0])
-right_ear = np.array([0.0313, 0.0343, 0])
-
-# developping array of angle ground truths to compare
-inter_aural_distance = np.abs(left_ear - right_ear)[0]  # keep inter aural distance recorded
-location = location - np.array([0, 0.0343, 0])  # adjust location for
 angle = [np.rad2deg(np.arctan(location[i][1]/location[i][0])) for i in range(24)]
+colors = list(mcolors.XKCD_COLORS)
 
-# download sound files and separate into spike datafile
-stereo, sampling_rate = librosa.load(filename[0], mono=False)
-waves = [stereo[0], stereo[2]]
+for i in range(len(location)):
+    # location of microphones, use channel 1 for left ear and channel 3 for right ear
+    left_ear = np.array([-0.0267, 0.0343, 0])
+    right_ear = np.array([0.0313, 0.0343, 0])
 
-# create data for ITD
-spike_data, spike_values = audio_processing.zero_crossing(waves, sampling_rate, 0)  # generate spike data values
-# fix any broadcasting issues
-length = sorted([spike_data[0], spike_data[1]], key=len)
-spike_data[0] = spike_data[0][:len(length[0])]
-spike_data[1] = spike_data[1][:len(length[0])]
+    # developping array of angle ground truths to compare
+    inter_aural_distance = np.abs(left_ear - right_ear)[0]  # keep inter aural distance recorded
+    location = location - np.array([0, 0.0343, 0])  # adjust location for
 
-# determine the inter aural time difference from the data amassed
-time_difference = np.abs(spike_data[1] - spike_data[0])  # find difference in zero crossings from both channels
-angle_rad = audio_processing.angle_by_itd(inter_aural_distance, *time_difference)
-angle_experimental = np.rad2deg(angle_rad)
-non_broken = angle_experimental[~np.isnan(angle_experimental)]
-plt.scatter(np.linspace(0, len(non_broken), len(non_broken)), non_broken, label="experimental results")
-plt.axhline(np.abs(inter_aural_distance * np.cos(angle[0])) / 343)
-plt.legend()
+    # download sound files and separate into spike datafile
+    stereo, sampling_rate = librosa.load(filename[i], mono=False)
+    waves = [stereo[0], stereo[2]]
+
+    # create data for ITD
+    spike_data, spike_values = audio_processing.zero_crossing(waves, sampling_rate, 2.5, 5)  # generate spike data values
+
+    # fix any broadcasting issues
+    length = sorted([spike_data[0], spike_data[1]], key=len)
+    spike_data[0] = spike_data[0][:len(length[0])]
+    spike_data[1] = spike_data[1][:len(length[0])]
+
+    # determine the inter aural time difference from the data amassed
+    time_difference = np.abs(spike_data[1] - spike_data[0])  # find difference in zero crossings from both channels
+    avg[i] = np.mean(time_difference)
+    angle_rad = np.rad2deg(audio_processing.angle_by_itd(inter_aural_distance, *time_difference))
+    non_broken = angle_rad[~np.isnan(angle_rad)]
+
+    # create plots
+    plt.scatter(spike_data[0], time_difference, color=colors[i+10], label=f"experimental results for {angle[i]}")
+    plt.axhline(inter_aural_distance * np.cos(angle[i]) / 343, color=colors[i+10])
+
+plt.xlabel("Time")
+plt.ylabel("ITD")
+plt.title("Interaural time difference (ITD) as a function of time")
+plt.legend(loc="upper left")
+plt.show()
+
+plt.scatter(angle, avg)
+plt.xlabel("angles")
+plt.ylabel("ITD average")
+plt.title("average ITD against angle")
 plt.show()
 
 # determine the inter aural level difference from data amassed per sample step

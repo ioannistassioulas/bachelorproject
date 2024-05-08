@@ -84,7 +84,7 @@ def count_peak_ratio(array):
     return left_ear / right_ear
 
 
-def zero_crossing(array, sr, cutoff):
+def zero_crossing(array, sr, cutoff, stoprecord):
     """
     Encode spike data by writing down zero crossings
     :param array: data containing audio information of each channel
@@ -97,11 +97,12 @@ def zero_crossing(array, sr, cutoff):
     spike_data = np.zeros(len(array), dtype=object)
     spike_values = np.zeros(len(array), dtype=object)
     start_index = np.int(np.round(cutoff * sr)) + 1  # index of specified cutoff value
+    end_index = np.int(np.round(stoprecord * sr)) + 1
 
     for i in range(len(array)):
         # take first array and record at cutoff index
         channel = array[i]
-        channel = channel[start_index:]
+        channel = channel[start_index:end_index]
         sign = np.sign(channel)
         current = sign[0]
 
@@ -133,7 +134,7 @@ def name_parse(direc, angle, frequency):
 def angle_by_itd(distance, *time):
     angle = np.array([])
     for i in range(len(time)):
-        angle = np.append(angle, np.arcsin(time[i] * 343 / distance))
+        angle = np.append(angle, np.arccos(time[i] * 343 / distance))
 
     return angle
 
@@ -151,5 +152,5 @@ def display_waves(stereo, sampling_rate):
     plt.show()
 
 
-def cross_correlation(first, second):
-    return np.sum(first * second) *
+# def cross_correlation(first, second):
+#     return np.sum(first * second) *
