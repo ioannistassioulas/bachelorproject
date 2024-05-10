@@ -43,7 +43,7 @@ for i in range(len(location)):
     left_ear = np.array([-0.0267, 0.0343, 0])
     right_ear = np.array([0.0313, 0.0343, 0])
 
-    # developping array of angle ground truths to compare
+    # developing array of angle ground truths to compare
     inter_aural_distance = np.abs(left_ear - right_ear)[0]  # keep inter aural distance recorded
     location = location - np.array([0, 0.0343, 0])  # adjust location for
 
@@ -52,12 +52,17 @@ for i in range(len(location)):
     waves = [stereo[0], stereo[2]]
 
     # create data for ITD
-    spike_data, spike_values = audio_processing.zero_crossing(waves, sampling_rate, 2.5, 5)  # generate spike data values
+    spike_data, spike_values = audio_processing.zero_crossing(waves, sampling_rate)  # generate spike data values
 
-    # fix any broadcasting issues
+    # fix any broadcasting issues and add cutoff for time
     length = sorted([spike_data[0], spike_data[1]], key=len)
     spike_data[0] = spike_data[0][:len(length[0])]
     spike_data[1] = spike_data[1][:len(length[0])]
+
+    start = spike_data[0] > 0.001
+    stop = spike_data[0] < 1
+    spike_data[0] = spike_data[0][start]
+    spike_data[1] = spike_data[1][start]
 
     # determine the inter aural time difference from the data amassed
     time_difference = np.abs(spike_data[1] - spike_data[0])  # find difference in zero crossings from both channels
@@ -75,7 +80,7 @@ plt.title("Interaural time difference (ITD) as a function of time")
 plt.legend(loc="upper left")
 plt.show()
 
-plt.scatter(angle, avg)
+plt.plot(angle, avg)
 plt.xlabel("angles")
 plt.ylabel("ITD average")
 plt.title("average ITD against angle")

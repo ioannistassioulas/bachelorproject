@@ -84,25 +84,23 @@ def count_peak_ratio(array):
     return left_ear / right_ear
 
 
-def zero_crossing(array, sr, cutoff, stoprecord):
+def zero_crossing(array, sr):
     """
     Encode spike data by writing down zero crossings
     :param array: data containing audio information of each channel
     :param sr: sampling rate used to convert index number into timeslot
     :param cutoff: cutoff potential to prevent overcounting
+    :param stop: ending point such that exact amount is taken
     :return: spike_data, array of timestamps where zero is crossed
     :return: spike_values, array of intensity values where zero crossing is recorded
     """
 
     spike_data = np.zeros(len(array), dtype=object)
     spike_values = np.zeros(len(array), dtype=object)
-    start_index = np.int(np.round(cutoff * sr)) + 1  # index of specified cutoff value
-    end_index = np.int(np.round(stoprecord * sr)) + 1
 
     for i in range(len(array)):
         # take first array and record at cutoff index
         channel = array[i]
-        channel = channel[start_index:end_index]
         sign = np.sign(channel)
         current = sign[0]
 
@@ -111,7 +109,7 @@ def zero_crossing(array, sr, cutoff, stoprecord):
 
         for j in range(len(sign)):
             if sign[j] != current:
-                output = np.append(output, j / sr)
+                output = np.append(output, (j / sr))
                 values = np.append(values, channel[j])
                 current = sign[j]
         spike_data[i] = output
@@ -132,10 +130,9 @@ def name_parse(direc, angle, frequency):
 
 
 def angle_by_itd(distance, *time):
-    angle = np.array([])
+    angle = np.zeros(len(time))
     for i in range(len(time)):
-        angle = np.append(angle, np.arccos(time[i] * 343 / distance))
-
+        angle[i] = np.arccos(time[i] * 343 / distance)
     return angle
 
 
