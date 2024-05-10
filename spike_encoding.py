@@ -10,6 +10,7 @@
 import audio_processing
 from audio_processing import *
 
+samplecount = 6
 # metadata involves array of all info in the order of angles, frequency to parse through in
 # the function calls, and then ground truth time difference to compare,
 # followed  by finally the calculated time difference from the simulations and the
@@ -24,19 +25,21 @@ home = os.getcwd()
 database = home + "/datasets/audio files/"
 database_gt = home + "/datasets/ground truth"
 
-location = [None] * 24
-filename = [None] * 24
-avg = [None] * 24
+location = [None] * samplecount
+filename = [None] * samplecount
+avg = [None] * samplecount
 
 # read pickle files inside of data
-for i in range(24):
+for i in range(samplecount):
     file = database_gt + f"/ssl-data_2017-04-29-13-41-12_{i}.gt.pkl"
     df = pd.read_pickle(file)
     filename[i] = database + df[0] + ".wav"
     location[i] = np.array(df[3][0][0])
 
-angle = [np.rad2deg(np.arctan(location[i][1]/location[i][0])) for i in range(24)]
+angle = [np.rad2deg(np.arctan(location[i][1]/location[i][0])) for i in range(samplecount)]
 colors = list(mcolors.XKCD_COLORS)
+cutoff = 2
+endtime = 2.1
 
 for i in range(len(location)):
     # location of microphones, use channel 1 for left ear and channel 3 for right ear
@@ -45,7 +48,7 @@ for i in range(len(location)):
 
     # developing array of angle ground truths to compare
     inter_aural_distance = np.abs(left_ear - right_ear)[0]  # keep inter aural distance recorded
-    location = location - np.array([0, 0.0343, 0])  # adjust location for
+    # location = location - np.array([0, 0.0343, 0])  # adjust location for sound source
 
     # download sound files and separate into spike datafile
     stereo, sampling_rate = librosa.load(filename[i], mono=False)
@@ -59,10 +62,11 @@ for i in range(len(location)):
     spike_data[0] = spike_data[0][:len(length[0])]
     spike_data[1] = spike_data[1][:len(length[0])]
 
-    start = spike_data[0] > 0.001
-    stop = spike_data[0] < 1
-    spike_data[0] = spike_data[0][start]
-    spike_data[1] = spike_data[1][start]
+    # adjust the start and stop time of the recording
+    start = spike_data[0] > cutoff
+    stop = spike_data[0] < endtime
+    spike_data[0] = spike_data[0][np.logical_and(start, stop)]
+    spike_data[1] = spike_data[1][np.logical_and(start, stop)]
 
     # determine the inter aural time difference from the data amassed
     time_difference = np.abs(spike_data[1] - spike_data[0])  # find difference in zero crossings from both channels
@@ -71,12 +75,13 @@ for i in range(len(location)):
     non_broken = angle_rad[~np.isnan(angle_rad)]
 
     # create plots
-    plt.scatter(spike_data[0], time_difference, color=colors[i+10], label=f"experimental results for {angle[i]}")
-    plt.axhline(inter_aural_distance * np.cos(angle[i]) / 343, color=colors[i+10])
+    plt.scatter(spike_data[0], time_difference, color=colors[i+10])
+    truth_check = inter_aural_distance * np.cos(angle[i]) / 343
+    plt.axhline(truth_check, color=colors[i+10], label=f"truth check of {truth_check} for {angle[i]}")
 
 plt.xlabel("Time")
 plt.ylabel("ITD")
-plt.title("Interaural time difference (ITD) as a function of time")
+plt.title(f"Interaural time difference (ITD) as a function of time from {cutoff}s to {endtime}s")
 plt.legend(loc="upper left")
 plt.show()
 
