@@ -28,6 +28,7 @@ database_gt = home + "/datasets/ground truth"
 location = [None] * samplecount
 filename = [None] * samplecount
 avg = [None] * samplecount
+avg_1 = [None] * samplecount
 
 # read pickle files inside of data
 for i in range(samplecount):
@@ -54,13 +55,20 @@ for i in range(len(location)):
     stereo, sampling_rate = librosa.load(filename[i], mono=False)
     waves = [stereo[0], stereo[2]]
 
-    # create data for ITD
+    # create data for ITD/ILD
     spike_data, spike_values = audio_processing.zero_crossing(waves, sampling_rate)  # generate spike data values
+    spike_x, spike_y = audio_processing.peak_difference(waves, sampling_rate)
 
-    # fix any broadcasting issues and add cutoff for time
+    # fix any broadcasting issues
     length = sorted([spike_data[0], spike_data[1]], key=len)
     spike_data[0] = spike_data[0][:len(length[0])]
     spike_data[1] = spike_data[1][:len(length[0])]
+
+    length = sorted([spike_y[0], spike_y[1]], key=len)
+    spike_x[0] = spike_x[0][:len(length[0])]
+    spike_x[1] = spike_x[1][:len(length[0])]
+    spike_y[0] = spike_y[0][:len(length[0])]
+    spike_y[1] = spike_y[1][:len(length[0])]
 
     # adjust the start and stop time of the recording
     start = spike_data[0] > cutoff
@@ -68,16 +76,25 @@ for i in range(len(location)):
     spike_data[0] = spike_data[0][np.logical_and(start, stop)]
     spike_data[1] = spike_data[1][np.logical_and(start, stop)]
 
+    start = spike_x[0] > cutoff
+    stop = spike_x[0] < endtime
+    spike_y[0] = spike_y[0][np.logical_and(start, stop)]
+    spike_y[1] = spike_y[1][np.logical_and(start, stop)]
+
     # determine the inter aural time difference from the data amassed
     time_difference = np.abs(spike_data[1] - spike_data[0])  # find difference in zero crossings from both channels
     avg[i] = np.mean(time_difference)
     angle_rad = np.rad2deg(audio_processing.angle_by_itd(inter_aural_distance, *time_difference))
     non_broken = angle_rad[~np.isnan(angle_rad)]
 
+    level_difference = np.abs(spike_y[1] - spike_y[0])
+    avg_1[i] = np.mean(level_difference)
+
     # create plots
     plt.scatter(spike_data[0], time_difference, color=colors[i+10])
     truth_check = inter_aural_distance * np.cos(angle[i]) / 343
     plt.axhline(truth_check, color=colors[i+10], label=f"truth check of {truth_check} for {angle[i]}")
+
 
 plt.xlabel("Time")
 plt.ylabel("ITD")
@@ -91,6 +108,11 @@ plt.ylabel("ITD average")
 plt.title("average ITD against angle")
 plt.show()
 
+plt.plot(angle, avg_1)
+plt.xlabel("angles")
+plt.ylabel("ILD average")
+plt.title("average ILD against angle")
+plt.show()
 # determine the inter aural level difference from data amassed per sample step
 max_level_difference = np.abs(np.nanmean(audio_processing.count_peak_ratio(stereo)))
 ild = max_level_difference

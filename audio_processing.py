@@ -18,6 +18,7 @@ import os
 from matplotlib import colors as mcolors
 import pandas as pd
 
+
 # import stereo dataset
 
 
@@ -118,6 +119,43 @@ def zero_crossing(array, sr):
     return spike_data, spike_values
 
 
+def peak_difference(array, sr):
+    """
+    Count peaks of each wave
+    :param array: array of 2 channel audio
+    :param sr: sampling rate of audio
+    :return: spike_data. x values of each spike location
+    :return: spike_values, y values of each spike location
+    """
+    spike_data = np.zeros(len(array), dtype=object)
+    spike_values = np.zeros(len(array), dtype=object)
+
+    for i in range(len(array)):
+        # initialize all the most important values first
+        channel = array[i]
+        x_spike = np.array([])
+        y_spike = np.array([])
+
+        # create array of derivatives
+        derivative = np.zeros(len(channel)-1)
+        for j in range(len(derivative)):
+            derivative[j] = channel[j] - channel[j+1]
+
+        # define sign change counting algorithm
+        sign = np.sign(derivative)
+        current = sign[0]
+        for j in range(len(sign)):
+            if sign[j] != current:
+                x_spike = np.append(x_spike, (j / sr))
+                y_spike = np.append(y_spike, channel[j])
+                current = sign[j]
+
+        # read the x_spike and y_spike information into the big array
+        spike_data[i] = x_spike
+        spike_values[i] = y_spike
+
+    return spike_data, spike_values
+
 def name_parse(direc, angle, frequency):
     """
     :param direc: destination of dataset files
@@ -147,7 +185,6 @@ def display_waves(stereo, sampling_rate):
     librosa.display.waveshow(stereo[1], sr=sampling_rate, label="first source", color="red")
     plt.legend()
     plt.show()
-
 
 # def cross_correlation(first, second):
 #     return np.sum(first * second) *

@@ -13,13 +13,15 @@ sr = 44100
 waveform_1 = np.zeros([5, 25], dtype=object)
 waveform_2 = np.zeros([5, 25], dtype=object)
 
+# Assume distance is approximately 1 meter away from origin
+amplitude = 1
 frequency = np.linspace(0, 8000, 26)
 t = np.linspace(0, 1, sr)
 
 # cwr = os.getcwd()
 # synth = cwr + "/datasets/synthetic_data/"
 # waves = [[None] * 6] * 5
-# for i in range(len(metadata[0])):
+# for i in range(len(metadata[0, power remains constant, while area changes. In case of the point source, area increases as A∝r2, while in case of the linear source, area increases as A∝ρ!])):
 #     for j in range(len(metadata[1])):
 #         file = audio_processing.name_parse(synth, metadata[0][i], metadata[1][j])
 #         waves[i][j], sr = librosa.load(file, mono=False)
@@ -28,8 +30,8 @@ t = np.linspace(0, 1, sr)
 for i in range(len(metadata[0])):  # loop through angles
     for j in range(len(frequency) - 1):  # loop through frequencies
         phase = metadata[2][i]
-        waveform_1[i][j] = np.sin(t * frequency[j + 1])  # left channel
-        waveform_2[i][j] = np.sin((t - phase) * frequency[j + 1])  # right channel
+        waveform_1[i][j] = (1 * np.sin(t * frequency[j + 1]))  # left channel
+        waveform_2[i][j] = (1 / 1.805369128) * np.sin((t - phase) * frequency[j + 1])  # right channel
 
 
 # create arrays to store ITD and ILD information
@@ -42,9 +44,11 @@ level_difference = np.zeros([len(metadata[0]), (len(frequency) - 1)])
 for i in range(len(metadata[0])):  # by angle
     for j in range(len(frequency)-1):  # by frequency
 
-        cutoff = 0.01
+        cutoff = 0
+        endtime = 10
         waves = np.array([waveform_1[i][j], waveform_2[i][j]])
         spike_data, spike_values = audio_processing.zero_crossing(waves, sr)
+        spike_x, spike_y = audio_processing.peak_difference(waves, sr)
 
         # fix any broadcasting issues
         length = sorted([spike_data[0], spike_data[1]], key=len)
@@ -53,17 +57,27 @@ for i in range(len(metadata[0])):  # by angle
         spike_values[0] = spike_values[0][:len(length[0])]
         spike_values[1] = spike_values[1][:len(length[0])]
 
+        length = sorted([spike_y[0], spike_y[1]], key=len)
+        spike_x[0] = spike_x[0][:len(length[0])]
+        spike_x[1] = spike_x[1][:len(length[0])]
+        spike_y[0] = spike_y[0][:len(length[0])]
+        spike_y[1] = spike_y[1][:len(length[0])]
+
         # implement cutoff point to prevent extraneous answers
-        booler = spike_data[0] > cutoff
-        spike_data[0] = spike_data[0][booler]
-        spike_data[1] = spike_data[1][booler]
-        spike_values[0] = spike_values[0][booler]
-        spike_values[1] = spike_values[1][booler]
+        start = spike_data[0] > cutoff
+        stop = spike_data[0] < endtime
+        spike_data[0] = spike_data[0][np.logical_and(start, stop)]
+        spike_data[1] = spike_data[1][np.logical_and(start, stop)]
+
+        start = spike_x[0] > cutoff
+        stop = spike_x[0] < endtime
+        spike_y[0] = spike_y[0][np.logical_and(start, stop)]
+        spike_y[1] = spike_y[1][np.logical_and(start, stop)]
 
         # plt.plot(t, waveform_1[i][j])
         # plt.plot(t, waveform_2[i][j])
-        # plt.scatter(spike_data[1], spike_values[1])
-        # plt.scatter(spike_data[0], spike_values[0])
+        # plt.scatter(spike_x[1], spike_y[1])
+        # plt.scatter(spike_x[0], spike_y[0])
         # plt.show()
 
         # determine the inter aural time difference from the data amassed
@@ -71,11 +85,8 @@ for i in range(len(metadata[0])):  # by angle
         time_difference[i][j] = np.mean(time_differences)  # return mean into metadata super array
         angle_mean[i][j] = np.rad2deg(audio_processing.angle_by_itd(0.3, time_difference[i][j]))
 
-        # determine the inter aural level difference from data amassed per sample step
-        ratios = audio_processing.count_peak_ratio(waves)
-        # max_level_differences = np.mean(ratios)
-        max_level_differences = audio_processing.peak_diff(waves)
-        level_difference[i][j] = np.mean(max_level_differences)
+        level_differences = np.abs(spike_y[1] - spike_y[0])
+        level_difference[i][j] = np.mean(level_differences)
 
 # prepare colors to use for the graph
 colors = list(mcolors.BASE_COLORS)
@@ -95,10 +106,9 @@ plt.show()
 colors = list(mcolors.XKCD_COLORS)
 
 for n in range(5):
-    plt.scatter(frequency[1:], level_difference[n], color=colors[n+15], label=f"Angles = {metadata[0][n]}")
-    plt.plot(frequency[1:], level_difference[n], color=colors[n+15])
+    plt.plot(frequency[1:], level_difference[n], color=colors[n+15], label=f"Angles = {metadata[0][n]}")
 
-    plt.title(f"Average difference in left channel and right channel audio intensity")
+    plt.title(f"Difference in peak per frequency level")
     plt.xlabel("Angles")
     plt.ylabel("Left Intensity - Right Intensity")
 
