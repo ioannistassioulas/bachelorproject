@@ -174,6 +174,13 @@ def angle_by_itd(distance, *time):
     return angle
 
 
+def angle_ild(distance, *amp):
+    angle = np.zeros(len(amp))
+    for i in range(len(amp)):
+        angle[i] = np.arccos(amp[i] / (2 * distance))
+    return angle
+
+
 def display_waves(stereo, sampling_rate):
     """
     print out the waveforms of each of the channels passed through

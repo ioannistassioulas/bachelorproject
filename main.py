@@ -27,18 +27,16 @@ t = np.linspace(0, 5, 5*sr)
 #         waves[i][j], sr = librosa.load(file, mono=False)
 
 #inverse square law checking for difference
-amp = [None] * len(metadata[0])
 
 for i in range(len(metadata[0])):  # loop through angles
     theta = metadata[0][i]
-    source = 10 * np.array([np.cos(theta), np.sin(theta), 0])
+    source = 1 * np.array([np.cos(theta), np.sin(theta), 0])
 
     left = source + np.array([-0.15, 0, 0])
     right = source + np.array([0.15, 0, 0])
 
-    amp_left = 100 / np.sum(left**2)
-    amp_right = 100 / np.sum(right**2)
-    amp[i] = (amp_left, amp_right)
+    amp_left = 1 / np.sum(left**2)
+    amp_right = 1 / np.sum(right**2)
     for j in range(len(frequency) - 1):  # loop through frequencies
         phase = metadata[2][i]
         waveform_1[i][j] = amp_right * np.sin(t * frequency[j + 1])  # left channel
@@ -49,7 +47,7 @@ for i in range(len(metadata[0])):  # loop through angles
 time_difference = np.zeros([len(metadata[0]), (len(frequency) - 1)])
 angle_mean = np.zeros([len(metadata[0]), (len(frequency) - 1)])
 level_difference = np.zeros([len(metadata[0]), (len(frequency) - 1)])
-
+mean_angle = np.zeros([len(metadata[0]), (len(frequency) - 1)])
 
 # go through all angles and frequencies again and apply tests
 for i in range(len(metadata[0])):  # by angle
@@ -104,6 +102,9 @@ for i in range(len(metadata[0])):  # by angle
 
         level_differences = np.abs(spike_y[1] - spike_y[0])
         level_difference[i][j] = np.mean(level_differences)
+        mean_angle[i][j] = np.rad2deg(audio_processing.angle_ild(0.3, level_difference[i][j]))
+
+print(mean_angle)
 
 # prepare colors to use for the graph
 colors = list(mcolors.BASE_COLORS)
@@ -123,8 +124,8 @@ plt.show()
 colors = list(mcolors.XKCD_COLORS)
 
 for n in range(5):
-    plt.plot(frequency[1:], level_difference[n], color=colors[n+15], label=f"Angles = {metadata[0][n]}")
-    plt.axhline((amp[n][1] - amp[n][0]), color=colors[n+15])
+    plt.plot(frequency[1:], mean_angle[n], color=colors[n+15], label=f"Angles = {metadata[0][n]}")
+    plt.axhline(metadata[0][m], color=colors[n+15])
     plt.title(f"Difference in peak per frequency level")
     plt.xlabel("Angles")
     plt.ylabel("Left Intensity - Right Intensity")
