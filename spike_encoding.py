@@ -29,6 +29,7 @@ location = [None] * samplecount
 filename = [None] * samplecount
 avg = [None] * samplecount
 avg_1 = [None] * samplecount
+ratio = [None] * samplecount
 
 # read pickle files inside of data
 for i in range(samplecount):
@@ -88,6 +89,7 @@ for i in range(len(location)):
     non_broken = angle_rad[~np.isnan(angle_rad)]
 
     level_difference = np.abs(spike_y[1] - spike_y[0])
+    ratio = spike_y[1] / spike_y[0]
     avg_1[i] = np.mean(level_difference)
 
     # create plots
@@ -108,7 +110,7 @@ plt.ylabel("ITD average")
 plt.title("average ITD against angle")
 plt.show()
 
-plt.plot(angle, avg_1)
+plt.plot(angle, ratio)
 plt.xlabel("angles")
 plt.ylabel("ILD average")
 plt.title("average ILD against angle")

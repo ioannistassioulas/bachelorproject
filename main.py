@@ -31,7 +31,7 @@ for i in range(len(metadata[0])):  # loop through angles
     for j in range(len(frequency) - 1):  # loop through frequencies
         phase = metadata[2][i]
         waveform_1[i][j] = (1 * np.sin(t * frequency[j + 1]))  # left channel
-        waveform_2[i][j] = (1 / 1.805369128) * np.sin((t - phase) * frequency[j + 1])  # right channel
+        waveform_2[i][j] = (1 / 1.3483309) * np.sin((t - phase) * frequency[j + 1])  # right channel
 
 
 # create arrays to store ITD and ILD information
@@ -107,7 +107,7 @@ colors = list(mcolors.XKCD_COLORS)
 
 for n in range(5):
     plt.plot(frequency[1:], level_difference[n], color=colors[n+15], label=f"Angles = {metadata[0][n]}")
-
+    plt.axhline((1 - 1/1.3483309), color="black")
     plt.title(f"Difference in peak per frequency level")
     plt.xlabel("Angles")
     plt.ylabel("Left Intensity - Right Intensity")
