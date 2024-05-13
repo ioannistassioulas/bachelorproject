@@ -88,8 +88,7 @@ for i in range(len(location)):
     angle_rad = np.rad2deg(audio_processing.angle_by_itd(inter_aural_distance, *time_difference))
     non_broken = angle_rad[~np.isnan(angle_rad)]
 
-    level_difference = np.abs(spike_y[1] - spike_y[0])
-    ratio = spike_y[1] / spike_y[0]
+    level_difference = np.abs(spike_y[0] - spike_y[0])
     avg_1[i] = np.mean(level_difference)
 
     # create plots

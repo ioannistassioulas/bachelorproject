@@ -137,13 +137,12 @@ def peak_difference(array, sr):
         y_spike = np.array([])
 
         # create array of derivatives
-        derivative = np.zeros(len(channel)-1)
-        for j in range(len(derivative)):
-            derivative[j] = channel[j] - channel[j+1]
+        derivative = np.gradient(channel)
 
         # define sign change counting algorithm
         sign = np.sign(derivative)
         current = sign[0]
+
         for j in range(len(sign)):
             if sign[j] != current:
                 x_spike = np.append(x_spike, (j / sr))
@@ -166,20 +165,8 @@ def name_parse(direc, angle, frequency):
     filename = direc + f"/{angle}_deg_{frequency}_Hz.wav"
     return filename
 
-
-def angle_by_itd(distance, *time):
-    angle = np.zeros(len(time))
-    for i in range(len(time)):
-        angle[i] = np.arccos(time[i] * 343 / distance)
-    return angle
-
-
-def angle_ild(distance, *amp):
-    angle = np.zeros(len(amp))
-    for i in range(len(amp)):
-        angle[i] = np.arccos(amp[i] / (2 * distance))
-    return angle
-
+angle_itd = lambda distance, time, speed: np.arccos(time * speed / distance)
+angle_ild = lambda distance, amplitude: np.arccos(0.5 * amplitude / distance)
 
 def display_waves(stereo, sampling_rate):
     """

@@ -12,9 +12,8 @@ metadata = np.array([[15, 30, 45, 60, 75], [200, 500, 800, 2000, 5000, 8000],
 sr = 44100
 waveform_1 = np.zeros([5, 25], dtype=object)
 waveform_2 = np.zeros([5, 25], dtype=object)
-
+ild_test = [None] * 5
 # Assume distance is approximately 1 meter away from origin
-amplitude = 1
 frequency = np.linspace(0, 8000, 26)
 t = np.linspace(0, 5, 5*sr)
 
@@ -30,31 +29,32 @@ t = np.linspace(0, 5, 5*sr)
 
 for i in range(len(metadata[0])):  # loop through angles
     theta = metadata[0][i]
-    source = 1 * np.array([np.cos(theta), np.sin(theta), 0])
+    radius = np.array([np.cos(theta), np.sin(theta), 0])
+    left = radius + np.array([0.15, 0, 0])
+    right = radius + np.array([-0.15, 0, 0])
 
-    left = source + np.array([-0.15, 0, 0])
-    right = source + np.array([0.15, 0, 0])
+    phase = metadata[2][i]
+    amp_left = 1 / left.dot(left)
+    amp_right = 1 / right.dot(right)
 
-    amp_left = 1 / np.sum(left**2)
-    amp_right = 1 / np.sum(right**2)
+    ild_test[i] = np.abs(amp_left - amp_right)
+
     for j in range(len(frequency) - 1):  # loop through frequencies
-        phase = metadata[2][i]
         waveform_1[i][j] = amp_right * np.sin(t * frequency[j + 1])  # left channel
         waveform_2[i][j] = amp_left * np.sin((t - phase) * frequency[j + 1])  # right channel
 
 
+
 # create arrays to store ITD and ILD information
 time_difference = np.zeros([len(metadata[0]), (len(frequency) - 1)])
-angle_mean = np.zeros([len(metadata[0]), (len(frequency) - 1)])
 level_difference = np.zeros([len(metadata[0]), (len(frequency) - 1)])
-mean_angle = np.zeros([len(metadata[0]), (len(frequency) - 1)])
 
 # go through all angles and frequencies again and apply tests
 for i in range(len(metadata[0])):  # by angle
     for j in range(len(frequency)-1):  # by frequency
 
-        cutoff = 1
-        endtime = 3
+        cutoff = 0
+        endtime = 99
         waves = np.array([waveform_1[i][j], waveform_2[i][j]])
         spike_data, spike_values = audio_processing.zero_crossing(waves, sr)
         spike_x, spike_y = audio_processing.peak_difference(waves, sr)
@@ -92,26 +92,23 @@ for i in range(len(metadata[0])):  # by angle
         # plt.plot(t, waveform_2[i][j])
         # plt.scatter(spike_x[1], spike_y[1])
         # plt.title(f"freq = {frequency[j+1]}, angle={metadata[0][i]}")
-        # plt.xlim(1, 3)
         # plt.show()
 
         # determine the inter aural time difference from the data amassed
-        time_differences = np.abs(spike_data[1] - spike_data[0])  # find difference in zero crossings from both channels
+        time_differences = spike_data[1] - spike_data[0]  # find difference in zero crossings from both channels
         time_difference[i][j] = np.mean(time_differences)  # return mean into metadata super array
-        angle_mean[i][j] = np.rad2deg(audio_processing.angle_by_itd(0.3, time_difference[i][j]))
 
         level_differences = np.abs(spike_y[1] - spike_y[0])
         level_difference[i][j] = np.mean(level_differences)
-        mean_angle[i][j] = np.rad2deg(audio_processing.angle_ild(0.3, level_difference[i][j]))
 
-print(mean_angle)
+print(level_difference)
+angle_avg_itd = np.rad2deg(audio_processing.angle_itd(0.3, time_difference, 343))
+angle_avg_ild = np.rad2deg(audio_processing.angle_ild(0.3, level_difference))
 
-# prepare colors to use for the graph
+# generate graphs for ITD
 colors = list(mcolors.BASE_COLORS)
-
-# generate graphs for ITD and ILD respectively
 for m in range(5):
-    plt.scatter(frequency[1:], angle_mean[m], color=colors[m], label=f"angle = {metadata[0][m]}")
+    plt.scatter(frequency[1:], angle_avg_itd[m], color=colors[m], label=f"angle = {metadata[0][m]}")
     plt.axhline(metadata[0][m], color=colors[m])
 
     plt.title(f"Performance of zero crossings method for angles, cutoff = {cutoff}")
@@ -121,14 +118,14 @@ for m in range(5):
 plt.legend(loc='upper left')
 plt.show()
 
+# likewise for ILD
 colors = list(mcolors.XKCD_COLORS)
-
 for n in range(5):
-    plt.plot(frequency[1:], mean_angle[n], color=colors[n+15], label=f"Angles = {metadata[0][n]}")
-    plt.axhline(metadata[0][m], color=colors[n+15])
+    plt.scatter(frequency[1:], level_difference[n], color=colors[n+15], label=f"Angles = {metadata[0][n]}")
+    plt.axhline(ild_test[n], color=colors[n+15])
     plt.title(f"Difference in peak per frequency level")
-    plt.xlabel("Angles")
-    plt.ylabel("Left Intensity - Right Intensity")
+    plt.xlabel("Frequencies")
+    plt.ylabel("ILD")
 
 plt.legend(loc='upper right')
 plt.show()
