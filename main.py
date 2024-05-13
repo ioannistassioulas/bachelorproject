@@ -16,7 +16,7 @@ waveform_2 = np.zeros([5, 25], dtype=object)
 # Assume distance is approximately 1 meter away from origin
 amplitude = 1
 frequency = np.linspace(0, 8000, 26)
-t = np.linspace(0, 1, sr)
+t = np.linspace(0, 5, 5*sr)
 
 # cwr = os.getcwd()
 # synth = cwr + "/datasets/synthetic_data/"
@@ -26,12 +26,23 @@ t = np.linspace(0, 1, sr)
 #         file = audio_processing.name_parse(synth, metadata[0][i], metadata[1][j])
 #         waves[i][j], sr = librosa.load(file, mono=False)
 
+#inverse square law checking for difference
+amp = [None] * len(metadata[0])
 
 for i in range(len(metadata[0])):  # loop through angles
+    theta = metadata[0][i]
+    source = 10 * np.array([np.cos(theta), np.sin(theta), 0])
+
+    left = source + np.array([-0.15, 0, 0])
+    right = source + np.array([0.15, 0, 0])
+
+    amp_left = 100 / np.sum(left**2)
+    amp_right = 100 / np.sum(right**2)
+    amp[i] = (amp_left, amp_right)
     for j in range(len(frequency) - 1):  # loop through frequencies
         phase = metadata[2][i]
-        waveform_1[i][j] = (1 * np.sin(t * frequency[j + 1]))  # left channel
-        waveform_2[i][j] = (1 / 1.3483309) * np.sin((t - phase) * frequency[j + 1])  # right channel
+        waveform_1[i][j] = amp_right * np.sin(t * frequency[j + 1])  # left channel
+        waveform_2[i][j] = amp_left * np.sin((t - phase) * frequency[j + 1])  # right channel
 
 
 # create arrays to store ITD and ILD information
@@ -44,8 +55,8 @@ level_difference = np.zeros([len(metadata[0]), (len(frequency) - 1)])
 for i in range(len(metadata[0])):  # by angle
     for j in range(len(frequency)-1):  # by frequency
 
-        cutoff = 0
-        endtime = 10
+        cutoff = 1
+        endtime = 3
         waves = np.array([waveform_1[i][j], waveform_2[i][j]])
         spike_data, spike_values = audio_processing.zero_crossing(waves, sr)
         spike_x, spike_y = audio_processing.peak_difference(waves, sr)
@@ -57,7 +68,7 @@ for i in range(len(metadata[0])):  # by angle
         spike_values[0] = spike_values[0][:len(length[0])]
         spike_values[1] = spike_values[1][:len(length[0])]
 
-        length = sorted([spike_y[0], spike_y[1]], key=len)
+        length = sorted([spike_x[0], spike_x[1]], key=len)
         spike_x[0] = spike_x[0][:len(length[0])]
         spike_x[1] = spike_x[1][:len(length[0])]
         spike_y[0] = spike_y[0][:len(length[0])]
@@ -66,6 +77,8 @@ for i in range(len(metadata[0])):  # by angle
         # implement cutoff point to prevent extraneous answers
         start = spike_data[0] > cutoff
         stop = spike_data[0] < endtime
+        spike_values[0] = spike_values[0][np.logical_and(start, stop)]
+        spike_values[1] = spike_values[1][np.logical_and(start, stop)]
         spike_data[0] = spike_data[0][np.logical_and(start, stop)]
         spike_data[1] = spike_data[1][np.logical_and(start, stop)]
 
@@ -73,11 +86,15 @@ for i in range(len(metadata[0])):  # by angle
         stop = spike_x[0] < endtime
         spike_y[0] = spike_y[0][np.logical_and(start, stop)]
         spike_y[1] = spike_y[1][np.logical_and(start, stop)]
+        spike_x[0] = spike_x[0][np.logical_and(start, stop)]
+        spike_x[1] = spike_x[1][np.logical_and(start, stop)]
 
         # plt.plot(t, waveform_1[i][j])
+        # plt.scatter(spike_x[0], spike_y[0])
         # plt.plot(t, waveform_2[i][j])
         # plt.scatter(spike_x[1], spike_y[1])
-        # plt.scatter(spike_x[0], spike_y[0])
+        # plt.title(f"freq = {frequency[j+1]}, angle={metadata[0][i]}")
+        # plt.xlim(1, 3)
         # plt.show()
 
         # determine the inter aural time difference from the data amassed
@@ -107,7 +124,7 @@ colors = list(mcolors.XKCD_COLORS)
 
 for n in range(5):
     plt.plot(frequency[1:], level_difference[n], color=colors[n+15], label=f"Angles = {metadata[0][n]}")
-    plt.axhline((1 - 1/1.3483309), color="black")
+    plt.axhline((amp[n][1] - amp[n][0]), color=colors[n+15])
     plt.title(f"Difference in peak per frequency level")
     plt.xlabel("Angles")
     plt.ylabel("Left Intensity - Right Intensity")
