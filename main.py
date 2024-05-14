@@ -14,7 +14,7 @@ waveform_1 = np.zeros([5, 25], dtype=object)
 waveform_2 = np.zeros([5, 25], dtype=object)
 ild_test = [None] * 5
 # Assume distance is approximately 1 meter away from origin
-frequency = np.linspace(0, 8000, 26)
+frequency = np.linspace(0, 20000, 26)
 t = np.linspace(0, 5, 5*sr)
 
 # cwr = os.getcwd()
@@ -87,12 +87,12 @@ for i in range(len(metadata[0])):  # by angle
         spike_x[0] = spike_x[0][np.logical_and(start, stop)]
         spike_x[1] = spike_x[1][np.logical_and(start, stop)]
 
-        # plt.plot(t, waveform_1[i][j])
-        # plt.scatter(spike_x[0], spike_y[0])
-        # plt.plot(t, waveform_2[i][j])
-        # plt.scatter(spike_x[1], spike_y[1])
-        # plt.title(f"freq = {frequency[j+1]}, angle={metadata[0][i]}")
-        # plt.show()
+        plt.plot(t, waveform_1[i][j])
+        plt.scatter(spike_x[0], spike_y[0])
+        plt.plot(t, waveform_2[i][j])
+        plt.scatter(spike_x[1], spike_y[1])
+        plt.title(f"freq = {frequency[j+1]}, angle={metadata[0][i]}")
+        plt.show()
 
         # determine the inter aural time difference from the data amassed
         time_differences = spike_data[1] - spike_data[0]  # find difference in zero crossings from both channels

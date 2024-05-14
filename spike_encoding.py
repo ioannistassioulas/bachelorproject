@@ -10,7 +10,7 @@
 import audio_processing
 from audio_processing import *
 
-samplecount = 6
+samplecount = 2
 # metadata involves array of all info in the order of angles, frequency to parse through in
 # the function calls, and then ground truth time difference to compare,
 # followed  by finally the calculated time difference from the simulations and the
@@ -85,7 +85,7 @@ for i in range(len(location)):
     # determine the inter aural time difference from the data amassed
     time_difference = np.abs(spike_data[1] - spike_data[0])  # find difference in zero crossings from both channels
     avg[i] = np.mean(time_difference)
-    angle_rad = np.rad2deg(audio_processing.angle_by_itd(inter_aural_distance, *time_difference))
+    angle_rad = np.rad2deg(audio_processing.angle_itd(inter_aural_distance, time_difference, 343))
     non_broken = angle_rad[~np.isnan(angle_rad)]
 
     level_difference = np.abs(spike_y[0] - spike_y[0])

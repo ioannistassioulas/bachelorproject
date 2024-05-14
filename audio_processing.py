@@ -165,7 +165,7 @@ def name_parse(direc, angle, frequency):
     filename = direc + f"/{angle}_deg_{frequency}_Hz.wav"
     return filename
 
-angle_itd = lambda distance, time, speed: np.arccos(time * speed / distance)
+angle_itd = lambda distance, time, speed: time * speed / distance
 angle_ild = lambda distance, amplitude: np.arccos(0.5 * amplitude / distance)
 
 def display_waves(stereo, sampling_rate):
