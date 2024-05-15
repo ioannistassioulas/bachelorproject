@@ -172,8 +172,10 @@ post_synaptic, v, i = tde_neuron(current_f, current_t)
 
 spikes = tde_model(400, current_f, current_t)
 spikes = np.array(spikes).astype(int)
-# it works!
 
+
+# it works!
+# plot out the dataset from what was created
 fig, ax = plt.subplots(2, 1)
 ax[0].plot(np.arange(len(v)), v, label="voltage")
 ax[0].plot(np.arange(len(post_synaptic)), post_synaptic, label="recording")

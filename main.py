@@ -87,12 +87,13 @@ for i in range(len(metadata[0])):  # by angle
         spike_x[0] = spike_x[0][np.logical_and(start, stop)]
         spike_x[1] = spike_x[1][np.logical_and(start, stop)]
 
-        plt.plot(t, waveform_1[i][j])
-        plt.scatter(spike_x[0], spike_y[0])
-        plt.plot(t, waveform_2[i][j])
-        plt.scatter(spike_x[1], spike_y[1])
-        plt.title(f"freq = {frequency[j+1]}, angle={metadata[0][i]}")
-        plt.show()
+        # # plot out the waves and the points in ILD (for debugging)
+        # plt.plot(t, waveform_1[i][j])
+        # plt.scatter(spike_x[0], spike_y[0])
+        # plt.plot(t, waveform_2[i][j])
+        # plt.scatter(spike_x[1], spike_y[1])
+        # plt.title(f"freq = {frequency[j+1]}, angle={metadata[0][i]}")
+        # plt.show()
 
         # determine the inter aural time difference from the data amassed
         time_differences = spike_data[1] - spike_data[0]  # find difference in zero crossings from both channels
@@ -101,32 +102,37 @@ for i in range(len(metadata[0])):  # by angle
         level_differences = np.abs(spike_y[1] - spike_y[0])
         level_difference[i][j] = np.mean(level_differences)
 
-print(level_difference)
+        plt.plot(np.arange(len(level_differences)), level_differences)
+        plt.title(f"level differences calculated for frequency={frequency[j+1]} and angle={metadata[0][i]}")
+        plt.xlabel("timestep")
+        plt.ylabel("ild")
+        plt.show()
+
 angle_avg_itd = np.rad2deg(audio_processing.angle_itd(0.3, time_difference, 343))
 angle_avg_ild = np.rad2deg(audio_processing.angle_ild(0.3, level_difference))
 
-# generate graphs for ITD
-colors = list(mcolors.BASE_COLORS)
-for m in range(5):
-    plt.scatter(frequency[1:], angle_avg_itd[m], color=colors[m], label=f"angle = {metadata[0][m]}")
-    plt.axhline(metadata[0][m], color=colors[m])
-
-    plt.title(f"Performance of zero crossings method for angles, cutoff = {cutoff}")
-    plt.xlabel("Frequency (Hz)")
-    plt.ylabel("Angle")
-
-plt.legend(loc='upper left')
-plt.show()
-
-# likewise for ILD
-colors = list(mcolors.XKCD_COLORS)
-for n in range(5):
-    plt.scatter(frequency[1:], level_difference[n], color=colors[n+15], label=f"Angles = {metadata[0][n]}")
-    plt.axhline(ild_test[n], color=colors[n+15])
-    plt.title(f"Difference in peak per frequency level")
-    plt.xlabel("Frequencies")
-    plt.ylabel("ILD")
-
-plt.legend(loc='upper right')
-plt.show()
+# # generate graphs for ITD
+# colors = list(mcolors.BASE_COLORS)
+# for m in range(5):
+#     plt.scatter(frequency[1:], angle_avg_itd[m], color=colors[m], label=f"angle = {metadata[0][m]}")
+#     plt.axhline(metadata[0][m], color=colors[m])
+#
+#     plt.title(f"Performance of zero crossings method for angles, cutoff = {cutoff}")
+#     plt.xlabel("Frequency (Hz)")
+#     plt.ylabel("Angle")
+#
+# plt.legend(loc='upper left')
+# plt.show()
+#
+# # likewise for ILD
+# colors = list(mcolors.XKCD_COLORS)
+# for n in range(5):
+#     plt.scatter(frequency[1:], level_difference[n], color=colors[n+15], label=f"Angles = {metadata[0][n]}")
+#     plt.axhline(ild_test[n], color=colors[n+15])
+#     plt.title(f"Difference in peak per frequency level")
+#     plt.xlabel("Frequencies")
+#     plt.ylabel("ILD")
+#
+# plt.legend(loc='upper right')
+# plt.show()
 
