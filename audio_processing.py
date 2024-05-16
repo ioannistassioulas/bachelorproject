@@ -21,6 +21,13 @@ import pandas as pd
 
 # import stereo dataset
 
+def filter_waves():
+    """
+
+    :return:
+    """
+
+    return wa
 
 def count_peak(array):
     """
@@ -154,7 +161,7 @@ def peak_difference(array, sr):
     return spike_data, spike_values
 
 
-def fix_broadcasting(x_facil, x_trig, y_facil, y_trig):
+def fix_broadcasting(x_values, y_values):
     """
     :param x_facil: x_values of first wave
     :param x_trig: x_values of second wave
@@ -162,8 +169,15 @@ def fix_broadcasting(x_facil, x_trig, y_facil, y_trig):
     :param y_trig: y_values of second wave
     :return facilitatory, trigger: the 2 waves, properly broadcasted
     """
+
+    #unpack values into arrays to check
+    xf = x_values[0]
+    xt = x_values[1]
+    yf = y_values[0]
+    yt = y_values[1]
+
     # sort x_values on basis of which is longer than the other
-    length = sorted([x_facil, x_trig], key=len)
+    length = sorted([xf, xt], key=len)
 
     # save the final index of the shorter array
     end_point = len(length[0])
@@ -171,16 +185,16 @@ def fix_broadcasting(x_facil, x_trig, y_facil, y_trig):
     # slice arrays of both waves by the length of the shorter array
 
     # slice x values
-    x_facil = x_facil[:end_point]
-    x_trig = x_trig[:end_point]
+    xf = xf[:end_point]
+    xt = xt[:end_point]
 
     # slice y values
-    y_facil = y_facil[:end_point]
-    y_trig = y_trig[:end_point]
+    yf = yf[:end_point]
+    yt = yt[:end_point]
 
     # package first and second wave together
-    x_values = [x_facil, x_trig]
-    y_values = [y_facil, y_trig]
+    x_values = [xf, xt]
+    y_values = [yf, yt]
 
     return x_values, y_values
 

@@ -128,6 +128,7 @@ def tde_neuron(facilitatory, trigger):
 
 def tde_model(time, facilitatory, trigger, sr=1):
     """
+    Generate spikes via potential
     :param time: how long the recording for spike input takes place
     :param sr: sampling rate of the audio, taken via librosa
     :param facilitatory: spike train of first input that is received
