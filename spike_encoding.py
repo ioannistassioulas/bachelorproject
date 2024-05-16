@@ -61,26 +61,29 @@ for i in range(len(location)):
     spike_x, spike_y = audio_processing.peak_difference(waves, sampling_rate)
 
     # fix any broadcasting issues
-    length = sorted([spike_data[0], spike_data[1]], key=len)
-    spike_data[0] = spike_data[0][:len(length[0])]
-    spike_data[1] = spike_data[1][:len(length[0])]
-
-    length = sorted([spike_y[0], spike_y[1]], key=len)
-    spike_x[0] = spike_x[0][:len(length[0])]
-    spike_x[1] = spike_x[1][:len(length[0])]
-    spike_y[0] = spike_y[0][:len(length[0])]
-    spike_y[1] = spike_y[1][:len(length[0])]
+    spike_data, spike_values = audio_processing.fix_broadcasting(spike_data[0], spike_values[0], spike_data[1], spike_values[1])
+    spike_x, spike_y = audio_processing.fix_broadcasting(spike_x[0], spike_y[0], spike_x[1], spike_y[1])
+    # length = sorted([spike_data[0], spike_data[1]], key=len)
+    # spike_data[0] = spike_data[0][:len(length[0])]
+    # spike_data[1] = spike_data[1][:len(length[0])]
+    # length = sorted([spike_y[0], spike_y[1]], key=len)
+    # spike_x[0] = spike_x[0][:len(length[0])]
+    # spike_x[1] = spike_x[1][:len(length[0])]
+    # spike_y[0] = spike_y[0][:len(length[0])]
+    # spike_y[1] = spike_y[1][:len(length[0])]
 
     # adjust the start and stop time of the recording
-    start = spike_data[0] > cutoff
-    stop = spike_data[0] < endtime
-    spike_data[0] = spike_data[0][np.logical_and(start, stop)]
-    spike_data[1] = spike_data[1][np.logical_and(start, stop)]
+    spike_data, spike_values = audio_processing.set_recording(spike_data, spike_values, cutoff, endtime)
+    spike_x, spike_y = audio_processing.set_recording(spike_x, spike_y, cutoff, endtime)
 
-    start = spike_x[0] > cutoff
-    stop = spike_x[0] < endtime
-    spike_y[0] = spike_y[0][np.logical_and(start, stop)]
-    spike_y[1] = spike_y[1][np.logical_and(start, stop)]
+    # start = spike_data[0] > cutoff
+    # stop = spike_data[0] < endtime
+    # spike_data[0] = spike_data[0][np.logical_and(start, stop)]
+    # spike_data[1] = spike_data[1][np.logical_and(start, stop)]
+    # start = spike_x[0] > cutoff
+    # stop = spike_x[0] < endtime
+    # spike_y[0] = spike_y[0][np.logical_and(start, stop)]
+    # spike_y[1] = spike_y[1][np.logical_and(start, stop)]
 
     # determine the inter aural time difference from the data amassed
     time_difference = np.abs(spike_data[1] - spike_data[0])  # find difference in zero crossings from both channels

@@ -90,8 +90,6 @@ def zero_crossing(array, sr):
     Encode spike data by writing down zero crossings
     :param array: data containing audio information of each channel
     :param sr: sampling rate used to convert index number into timeslot
-    :param cutoff: cutoff potential to prevent overcounting
-    :param stop: ending point such that exact amount is taken
     :return: spike_data, array of timestamps where zero is crossed
     :return: spike_values, array of intensity values where zero crossing is recorded
     """
@@ -155,30 +153,78 @@ def peak_difference(array, sr):
 
     return spike_data, spike_values
 
-def name_parse(direc, angle, frequency):
-    """
-    :param direc: destination of dataset files
-    :param angle: angle of the specific dataname
-    :param frequency: frequency of sound wave
-    :return: filename to be appended to end of string
-    """
-    filename = direc + f"/{angle}_deg_{frequency}_Hz.wav"
-    return filename
 
-angle_itd = lambda distance, time, speed: time * speed / distance
-angle_ild = lambda distance, amplitude: np.arccos(0.5 * amplitude / distance)
-
-def display_waves(stereo, sampling_rate):
+def fix_broadcasting(x_facil, x_trig, y_facil, y_trig):
     """
-    print out the waveforms of each of the channels passed through
-    Input: array, a NxM array of N channels and M samples giving audio intensity
-    Output
+    :param x_facil: x_values of first wave
+    :param x_trig: x_values of second wave
+    :param y_facil: y_values of first wave
+    :param y_trig: y_values of second wave
+    :return facilitatory, trigger: the 2 waves, properly broadcasted
     """
-    plt.figure().set_figwidth(12)
-    librosa.display.waveshow(stereo[0], sr=sampling_rate, label="second source", color="blue")
-    librosa.display.waveshow(stereo[1], sr=sampling_rate, label="first source", color="red")
-    plt.legend()
-    plt.show()
+    # sort x_values on basis of which is longer than the other
+    length = sorted([x_facil, x_trig], key=len)
 
-# def cross_correlation(first, second):
-#     return np.sum(first * second) *
+    # save the final index of the shorter array
+    end_point = len(length[0])
+
+    # slice arrays of both waves by the length of the shorter array
+
+    # slice x values
+    x_facil = x_facil[:end_point]
+    x_trig = x_trig[:end_point]
+
+    # slice y values
+    y_facil = y_facil[:end_point]
+    y_trig = y_trig[:end_point]
+
+    # package first and second wave together
+    x_values = [x_facil, x_trig]
+    y_values = [y_facil, y_trig]
+
+    return x_values, y_values
+
+
+def set_recording(x_values, y_values, start, stop):
+    """
+    Define time in which to start and stop recording the waves
+    :param x_values: 2xN array of x_values of spike information, first and second waves
+    :param y_values: 2xN array of y_values of spike information, first and second waves
+    :param start: value of time to start recording
+    :param stop: value of time to end recording
+    :return x_values, y_values: original x and y, now properly snipped for the recording
+    """
+
+    # define start and stop array masks, based on time values greater than start time and less than end time
+    # use only one array such that the final arrays still correspond
+    start_index = x_values[0] > start
+    stop_index = x_values[0] < stop
+
+    # apply boolean slices onto the x values and y values
+    x_values[0] = x_values[0][np.logical_and(start_index, stop_index)]
+    y_values[0] = y_values[0][np.logical_and(start_index, stop_index)]
+    x_values[1] = x_values[1][np.logical_and(start_index, stop_index)]
+    y_values[1] = y_values[1][np.logical_and(start_index, stop_index)]
+
+    return x_values, y_values
+
+
+def angle_itd(distance, time, speed=343):
+    """
+    Given a certain time difference, calculates the angle corresponding to the DoA
+    :param distance: interaural distance of the microphones
+    :param time: recorded interaural time difference
+    :param speed: the speed of sound, set to 343
+    :return: angle, given by formula
+    """
+    return np.arccos(time * speed / distance)
+
+
+def angle_ild(distance, amplitude):
+    """
+    Given the corresponding interaural level difference, returns the angle corresponding to the DoA
+    :param distance: interaural distance of the microphones
+    :param amplitude: recorded interaural level difference
+    :return: angle, given by formula
+    """
+    return np.arccos(0.5 * amplitude / distance)

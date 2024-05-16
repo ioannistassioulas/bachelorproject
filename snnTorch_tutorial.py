@@ -108,6 +108,7 @@ def tde_neuron(facilitatory, trigger):
         mem_voltage, current = forward_euler_lif(mem_voltage, facilitatory[step])
         voltage_record.append(mem_voltage)
         spike_record.append(current)
+
         # implement code to start recording epsc voltages
         if facilitatory[step] > 0:
             # stop record
