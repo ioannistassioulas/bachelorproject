@@ -28,8 +28,8 @@ waveform_2 = np.zeros([len(angles)-1, len(frequency)-1], dtype=object)
 #         file = audio_processing.name_parse(synth, metadata[0][i], metadata[1][j])
 #         waves[i][j], sr = librosa.load(file, mono=False)
 
-#inverse square law checking for difference
-k = 0
+# create counter to check progress while it calculates
+k = 1
 for i in range(len(angles)-1):  # loop through angles
     theta = angles[i]
     radius = np.array([np.cos(theta), np.sin(theta), 0])
@@ -53,7 +53,10 @@ for i in range(len(angles)-1):  # loop through angles
 # create arrays to store ITD and ILD information
 time_difference = np.zeros([len(angles)-1, (len(frequency) - 1)])
 level_difference = np.zeros([len(angles)-1, (len(frequency) - 1)])
-count = 1
+
+#see about about counter
+k = 1
+
 # go through all angles and frequencies again and apply tests
 for i in range(len(angles)-1):  # by angle
     for j in range(len(frequency)-1):  # by frequency
@@ -80,14 +83,14 @@ for i in range(len(angles)-1):  # by angle
         level_difference[i][j] = np.mean(level_differences)
 
         #check to make surehings are still working
-        print(f"{count/1800*100}%")
-        count += 1
+        print(f"{k/1800*100}%")
+        k += 1
 
+# calculate angles with the formulas given
 angle_avg_itd = np.rad2deg(audio_processing.angle_itd(0.3, time_difference))
 angle_avg_ild = np.rad2deg(audio_processing.angle_ild(0.3, level_difference))
 
 # generate graphs for ITD
-
 for m in range(len(angles)-1):
     # stops working at 3840 Hz, 4160 Hz, 5120 Hz, 7360 Hz
     # Corresponds to wavelengths of 0.0002604 m, 0.00024038, 0.0001953125, 0.000135869
@@ -102,7 +105,6 @@ plt.legend(loc='upper left')
 plt.show()
 
 # likewise for ILD
-
 for n in range(len(angles)-1):
     plt.scatter(frequency[1:], level_difference[n], label=f"Angles = {angles[n]}")
     plt.axhline(ild_test[n])
