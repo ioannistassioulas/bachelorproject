@@ -17,17 +17,24 @@ import torch
 import os
 from matplotlib import colors as mcolors
 import pandas as pd
+import matplotlib.cm as mplcm
+import matplotlib.colors as colors
+from matplotlib.pyplot import cm
 
 
 # import stereo dataset
 
-def filter_waves():
+def filter_waves(freq_threshold, audio, sr):
     """
-
+    Filter soundwave by desired frequency
+    :param freq: desired frequency to isolate
+    :param audio: audio file to be filtered
+    :param sr: sampling rate of the audio
     :return:
     """
+    freq_audio = librosa.stft(audio)
+    return waves
 
-    return wa
 
 def count_peak(array):
     """
@@ -149,9 +156,10 @@ def peak_difference(array, sr):
         current = sign[0]
 
         for j in range(len(sign)):
-            if sign[j] != current:
-                x_spike = np.append(x_spike, (j / sr))
-                y_spike = np.append(y_spike, channel[j])
+            if sign[j] != current: # if the sign changes, update current sign
+                if current > 0:  # count only positive peaks
+                    x_spike = np.append(x_spike, (j / sr))
+                    y_spike = np.append(y_spike, channel[j])
                 current = sign[j]
 
         # read the x_spike and y_spike information into the big array
@@ -231,7 +239,7 @@ def angle_itd(distance, time, speed=343):
     :param speed: the speed of sound, set to 343
     :return: angle, given by formula
     """
-    return np.arccos(time * speed / distance)
+    return np.rad2deg(np.arccos(time * speed / distance))
 
 
 def angle_ild(distance, amplitude):
@@ -241,4 +249,4 @@ def angle_ild(distance, amplitude):
     :param amplitude: recorded interaural level difference
     :return: angle, given by formula
     """
-    return np.arccos(0.5 * amplitude / distance)
+    return np.rad2deg(np.arccos(0.5 * amplitude / distance))

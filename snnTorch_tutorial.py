@@ -55,6 +55,7 @@ import numpy as np
 
 thresh = 5e4
 
+
 def forward_euler_lif(v, current, resist=1e7, cap=5e-10, threshold = thresh, time_step=1e-3):
     """
     Numerically evaluate the ODE of the passive membrane. Save results onto volt_mem
@@ -102,7 +103,7 @@ def tde_neuron(facilitatory, trigger):
     spike_record = []
     epsc = []
 
-    #integrate over IDE to produce chain of voltages and spikes
+    # integrate over IDE to produce chain of voltages and spikes
     for step in range(timestep):
         # start creating voltages
         mem_voltage, current = forward_euler_lif(mem_voltage, facilitatory[step])
@@ -153,12 +154,10 @@ def tde_model(time, facilitatory, trigger, sr=1):
     for j in trigger:
         current_t[int(j)] = 1
 
-    # create recording bank for spikes and membrane potential. Also, V(0) = 0
-    membrane_volt = torch.zeros(1)
     # Generate spikes for LiF model
     epsc, spike, membrane_volt = tde_neuron(facilitatory, trigger)
 
-    #feed membrane recording as input for new neuron
+    # feed membrane recording as input for new neuron
     final_spikes = []
     for steps in range(timesteps):
         throwaway, spikes = forward_euler_lif(epsc[steps], 0)
