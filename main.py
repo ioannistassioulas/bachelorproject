@@ -3,7 +3,9 @@ from audio_processing import *
 
 # create sound waves
 sr = 44100
-angles = np.linspace(-90, 90, 13)
+angles = np.linspace(0, 180, 13)
+phase = np.cos(np.deg2rad(angles)) * 0.3 / 343
+print(phase)
 frequency = np.linspace(320, 8000, 25)
 t = np.linspace(0, 5, 5*sr)
 ild_test = [None] * len(angles)
@@ -18,7 +20,6 @@ for i in range(len(angles)):  # loop through angles
     left = radius + np.array([0.15, 0, 0])
     right = radius + np.array([-0.15, 0, 0])
 
-    phase = np.cos(np.deg2rad(theta)) * 0.3 / 343
     amp_left = 1 / left.dot(left)
     amp_right = 1 / right.dot(right)
 
@@ -26,7 +27,7 @@ for i in range(len(angles)):  # loop through angles
 
     for j in range(len(frequency)):  # loop through frequencies
         waveform_1[i][j] = amp_right * np.sin(t * frequency[j])  # left channel
-        waveform_2[i][j] = amp_left * np.sin((t - phase) * frequency[j])  # right channel
+        waveform_2[i][j] = amp_left * np.sin((t - phase[i]) * frequency[j])  # right channel
         print(f"{100 * k / (len(angles) * len(frequency)) }%")
         k += 1
 
@@ -63,7 +64,7 @@ for i in range(len(angles)):  # by angle
         level_differences = spike_y[1] - spike_y[0]
         level_difference[i][j] = np.mean(level_differences)
 
-        #check to make surehings are still working
+        #check to make sure of progress are still working
         print(f"{k/(len(angles) * len(frequency))*100}%")
         k += 1
 
@@ -75,8 +76,8 @@ color = iter(cm.rainbow(np.linspace(0, 1, len(angles))))  # create unique colors
 
 for m in range(len(angles)):
     c = next(color)
-    ax.scatter(frequency, audio_processing.angle_itd(0.3, time_difference[m]), color=c,  label=f"angle = {angles[m]}")
-    ax.axhline(angles[m], color=c)
+    ax.scatter(frequency, time_difference[m], color=c,  label=f"angle = {angles[m]}")
+    ax.axhline(phase[m], color=c)
 
     ax.set_title("Performance of zero crossings method for angles")
     ax.set_xlabel("Frequency (Hz)")

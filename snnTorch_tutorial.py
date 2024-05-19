@@ -56,15 +56,16 @@ import numpy as np
 thresh = 5e4
 
 
-def forward_euler_lif(v, current, resist=1e7, cap=5e-10, threshold = thresh, time_step=1e-3):
+def forward_euler_lif(v, current, resist=1e7, cap=5e-10, threshold=thresh, time_step=1e-3):
     """
     Numerically evaluate the ODE of the passive membrane. Save results onto volt_mem
     array.
     :param v: rest membrane voltage
+    :param current: input current - taken as spikes
     :param resist: resistance of the membrane
     :param cap: capacitance of the membrane
-    :param current: input current - taken as spikes
-    :param time_step: timestep to evaluate voltage
+    :param threshold: voltage threshold for when spike will fire
+    :param time_step: timestep to evaluate potential
     :return v: voltage at following timestep
     :return spike: 1 if spike is sent, 0 otherwise
     """
@@ -72,7 +73,8 @@ def forward_euler_lif(v, current, resist=1e7, cap=5e-10, threshold = thresh, tim
     # define time constant and generate spike
     time_constant = resist * cap
     spike = (v > threshold)
-    # reset value for if spike is produced
+
+    # reset value for if spike is produced, always evaluate to 0
     reset = threshold * spike
 
     # evaluate next step of voltage
@@ -80,12 +82,13 @@ def forward_euler_lif(v, current, resist=1e7, cap=5e-10, threshold = thresh, tim
     return v, spike
 
 
-def tde_neuron(facilitatory, trigger):
+def tde_neuron(facilitatory, trigger, refractory=10):
     """
     TDE model for receiving 2 spike trains and then returning corresponding
     EPSC.
     :param facilitatory: spike train of first input that is received
     :param trigger: spike train of second input that is received
+    :param refractory: how many timesteps to prevent before next fire
     :return espc: excitatory post synpatic current
     :return voltage
     :return spikes
@@ -97,6 +100,8 @@ def tde_neuron(facilitatory, trigger):
     # define initial conditions of voltage
     mem_voltage = torch.zeros(1)
     record = False
+    refrac = False
+    count = 0
 
     # define recording arrays
     voltage_record = []
@@ -105,12 +110,21 @@ def tde_neuron(facilitatory, trigger):
 
     # integrate over IDE to produce chain of voltages and spikes
     for step in range(timestep):
-        # start creating voltages
-        mem_voltage, current = forward_euler_lif(mem_voltage, facilitatory[step])
-        voltage_record.append(mem_voltage)
-        spike_record.append(current)
 
-        # implement code to start recording epsc voltages
+        # check for refractory period
+        if facilitatory[step]:
+            refrac = True
+        # start creating voltages
+        if not refrac:
+            mem_voltage, current = forward_euler_lif(mem_voltage, facilitatory[step])
+            voltage_record.append(mem_voltage)
+            spike_record.append(current)
+        else:
+            mem_voltage, current = 0, facilitatory[step]
+            voltage_record.append(mem_voltage)
+            spike_record.append(current)
+
+        # only record in time distance between both crossings
         if facilitatory[step] > 0:
             # stop record
             record = False
@@ -119,10 +133,12 @@ def tde_neuron(facilitatory, trigger):
             record = True
 
         if record:
-            #record voltage
             epsc.append(mem_voltage)
         else:
             epsc.append(torch.zeros(1))
+
+        #update refractory period counter
+        count += 1
 
     return epsc, voltage_record, spike_record
 
