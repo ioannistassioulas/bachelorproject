@@ -82,7 +82,7 @@ def forward_euler_lif(v, current, resist=1e7, cap=5e-10, threshold=thresh, time_
     return v, spike
 
 
-def tde_neuron(facilitatory, trigger, refractory=10):
+def tde_neuron(facilitatory, trigger, refractory=0):
     """
     TDE model for receiving 2 spike trains and then returning corresponding
     EPSC.
@@ -113,32 +113,29 @@ def tde_neuron(facilitatory, trigger, refractory=10):
 
         # check for refractory period
         if facilitatory[step]:
-            refrac = True
-        # start creating voltages
-        if not refrac:
-            mem_voltage, current = forward_euler_lif(mem_voltage, facilitatory[step])
+            count = refractory
+
+        # start simulating the TDE
+        mem_voltage, current = forward_euler_lif(mem_voltage, facilitatory[step])
+        spike_record.append(current)
+
+        # If refractory period, save null voltage. Otherwise, as normal
+        if count >= 0:
             voltage_record.append(mem_voltage)
-            spike_record.append(current)
         else:
-            mem_voltage, current = 0, facilitatory[step]
-            voltage_record.append(mem_voltage)
-            spike_record.append(current)
+            voltage_record.append(torch.zeros(1))
+            count -= 1
 
         # only record in time distance between both crossings
-        if facilitatory[step] > 0:
-            # stop record
+        if facilitatory[step] > 0:  # stop record
             record = False
-        if trigger[step] > 0:
-            # start record
+        if trigger[step] > 0:  # start record
             record = True
 
         if record:
             epsc.append(mem_voltage)
         else:
             epsc.append(torch.zeros(1))
-
-        #update refractory period counter
-        count += 1
 
     return epsc, voltage_record, spike_record
 
@@ -182,8 +179,8 @@ def tde_model(time, facilitatory, trigger, sr=1):
     return final_spikes
 
 
-current_f = torch.cat((torch.zeros(10, 1), torch.ones(1, 1), torch.zeros(189, 1), torch.ones(1, 1), torch.zeros(199, 1)), 0)
-current_t = torch.cat((torch.zeros(15, 1), torch.ones(1, 1), torch.zeros(189, 1), torch.ones(1, 1), torch.zeros(194, 1)), 0)
+current_f = torch.cat((torch.zeros(10, 1), torch.ones(5, 1), torch.zeros(189, 1), torch.ones(5, 1), torch.zeros(199, 1)), 0)
+current_t = torch.cat((torch.zeros(15, 1), torch.ones(5, 1), torch.zeros(189, 1), torch.ones(5, 1), torch.zeros(194, 1)), 0)
 
 post_synaptic, v, i = tde_neuron(current_f, current_t)
 
@@ -194,10 +191,10 @@ spikes = np.array(spikes).astype(int)
 # it works!
 # plot out the dataset from what was created
 fig, ax = plt.subplots(2, 1)
-ax[0].plot(np.arange(len(v)), v, label="voltage")
 ax[0].plot(np.arange(len(post_synaptic)), post_synaptic, label="recording")
 ax[0].plot(np.arange(len(current_f)), current_f*1e5, label="current")
 ax[0].plot(np.arange(len(current_t)), current_t*1e5, label="trigger")
+ax[0].plot(np.arange(len(v)), v, label="voltage")
 ax[0].legend()
 
 ax[1].plot(np.arange(len(post_synaptic)), np.array(post_synaptic), label="voltage")
