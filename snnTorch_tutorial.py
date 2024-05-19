@@ -53,10 +53,10 @@ import numpy as np
 
 # start creating TDE model
 
-thresh = 5e4
+thresh = 0.6
 
 
-def forward_euler_lif(v, current, resist=1e7, cap=5e-10, threshold=thresh, time_step=1e-3):
+def forward_euler_lif(v, current, resist=5, cap=5e-3, threshold=thresh, time_step=1e-3):
     """
     Numerically evaluate the ODE of the passive membrane. Save results onto volt_mem
     array.
@@ -75,14 +75,14 @@ def forward_euler_lif(v, current, resist=1e7, cap=5e-10, threshold=thresh, time_
     spike = (v > threshold)
 
     # reset value for if spike is produced, always evaluate to 0
-    reset = threshold * spike
+    reset = spike * threshold
 
     # evaluate next step of voltage
     v = v + (time_step / time_constant) * (-v + current * resist) - reset
     return v, spike
 
 
-def tde_neuron(facilitatory, trigger, refractory=0):
+def tde_neuron(facilitatory, trigger, refractory=10):
     """
     TDE model for receiving 2 spike trains and then returning corresponding
     EPSC.
@@ -100,31 +100,29 @@ def tde_neuron(facilitatory, trigger, refractory=0):
     # define initial conditions of voltage
     mem_voltage = torch.zeros(1)
     record = False
-    refrac = False
-    count = 0
 
     # define recording arrays
     voltage_record = []
     spike_record = []
     epsc = []
+    refrac = 0
 
-    # integrate over IDE to produce chain of voltages and spikes
+    # integrate over IDE to produce voltage and spike evolution
     for step in range(timestep):
 
-        # check for refractory period
-        if facilitatory[step]:
-            count = refractory
-
-        # start simulating the TDE
+        # start simulating the TDE, change setting of threshold
         mem_voltage, current = forward_euler_lif(mem_voltage, facilitatory[step])
         spike_record.append(current)
 
-        # If refractory period, save null voltage. Otherwise, as normal
-        if count >= 0:
+        # adds refractory time depending on if a spike was released or not
+        refrac += current * refractory
+        # checks if refractory time is still active
+        if refrac > 0:
+            mem_voltage = torch.zeros(1)
             voltage_record.append(mem_voltage)
+            refrac -= 1
         else:
-            voltage_record.append(torch.zeros(1))
-            count -= 1
+            voltage_record.append(mem_voltage)
 
         # only record in time distance between both crossings
         if facilitatory[step] > 0:  # stop record
@@ -158,14 +156,14 @@ def tde_model(time, facilitatory, trigger, sr=1):
 
     current_f = torch.zeros(timesteps)
     for j in facilitatory:
-        current_f[int(j)] = 1  # at each index of the time step you input in facilitatory array
+        current_f[int(j)] = torch.ones(1)  # at each index of the time step you input in facilitatory array
 
     # repeating for trigger input
     trigger = trigger * sr
 
     current_t = torch.zeros(timesteps)
     for j in trigger:
-        current_t[int(j)] = 1
+        current_t[int(j)] = torch.ones(1)
 
     # Generate spikes for LiF model
     epsc, spike, membrane_volt = tde_neuron(facilitatory, trigger)
@@ -179,8 +177,9 @@ def tde_model(time, facilitatory, trigger, sr=1):
     return final_spikes
 
 
-current_f = torch.cat((torch.zeros(10, 1), torch.ones(5, 1), torch.zeros(189, 1), torch.ones(5, 1), torch.zeros(199, 1)), 0)
-current_t = torch.cat((torch.zeros(15, 1), torch.ones(5, 1), torch.zeros(189, 1), torch.ones(5, 1), torch.zeros(194, 1)), 0)
+# current_f = torch.ones(400)
+current_f = torch.cat((torch.zeros(10, 1), torch.ones(1, 1), torch.zeros(189, 1), torch.ones(1, 1), torch.zeros(199, 1)), 0)
+current_t = torch.cat((torch.zeros(15, 1), torch.ones(1, 1), torch.zeros(189, 1), torch.ones(1, 1), torch.zeros(194, 1)), 0)
 
 post_synaptic, v, i = tde_neuron(current_f, current_t)
 
@@ -192,8 +191,9 @@ spikes = np.array(spikes).astype(int)
 # plot out the dataset from what was created
 fig, ax = plt.subplots(2, 1)
 ax[0].plot(np.arange(len(post_synaptic)), post_synaptic, label="recording")
-ax[0].plot(np.arange(len(current_f)), current_f*1e5, label="current")
-ax[0].plot(np.arange(len(current_t)), current_t*1e5, label="trigger")
+ax[0].scatter(np.arange(len(current_f)), current_f, marker="x", label="current")
+ax[0].scatter(np.arange(len(current_t)), current_t, marker="x", label="trigger")
+ax[0].plot(np.arange(len(i)), i, label="tde triggering")
 ax[0].plot(np.arange(len(v)), v, label="voltage")
 ax[0].legend()
 
