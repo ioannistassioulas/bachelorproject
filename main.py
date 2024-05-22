@@ -3,7 +3,7 @@ from audio_processing import *
 
 # create sound waves
 sr = 48000
-angles = np.linspace(0, 180, 13)
+angles = np.linspace(0, 90, 10)
 phase = np.cos(np.deg2rad(angles)) * 0.3 / 343
 frequency = np.linspace(320, 8000, 25)
 t = np.linspace(0, 5, 5*sr)

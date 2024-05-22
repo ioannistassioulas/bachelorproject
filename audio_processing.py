@@ -5,6 +5,7 @@ from pathlib import Path
 import snntorch as snn
 import torch
 import os
+import os.path as path
 from matplotlib import colors as mcolors
 import pandas as pd
 import matplotlib.cm as mplcm

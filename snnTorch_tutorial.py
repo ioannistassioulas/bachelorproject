@@ -51,6 +51,7 @@ def tde_neuron(time, facilitatory, trigger, theta, refractory=10, sr=1):
     # define amount of timesteps to be looped over
     timestep = time * sr
 
+    # convert timestamp information into spike train
     # create array of timesteps to send spikes and create spike train for facilitatory input
     facilitatory = facilitatory * sr
     current_f = torch.zeros(timestep)
@@ -121,20 +122,8 @@ def tde_model(time, facilitatory, trigger, theta_input, theta_evaluate, sr=1):
     # define timesteps where model will be defined over
     timesteps = sr * time
 
-    # create array of timesteps to send spikes and create spike train for facilitatory input
-    facilitatory = facilitatory * sr
-    current_f = torch.zeros(timesteps)
-    for j in facilitatory:
-        current_f[int(j)-1] = torch.ones(1)  # at each index of the time step you input in facilitatory array
-
-    # repeating for trigger input
-    trigger = trigger * sr
-    current_t = torch.zeros(timesteps)
-    for j in trigger:
-        current_t[int(j)] = torch.ones(1)
-
     # Generate voltage for LiF model
-    epsc, spike, membrane_volt = tde_neuron(time, current_f, current_t, theta_input)
+    epsc, membrane_volt, spike = tde_neuron(time, facilitatory, trigger, theta_input)
 
     # feed membrane recording as input for new neuron
     final_spikes = []
@@ -155,8 +144,6 @@ current_trig = np.array([13, 27, 73])
 
 # Final LiF neuron modeling the voltage
 post_synaptic, i, v, spikes = tde_model(time1, current_fac, current_trig, 1e20, 2e6)
-print(spikes)
-
 
 # it works!
 # plot out the dataset from what was created

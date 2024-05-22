@@ -3,9 +3,9 @@ from audio_processing import *
 
 # get current directory
 home = os.getcwd()
-print(home)
-metadata_tau_loc = home + "/datasets/tau-dataset/metadata_dev/"
-audio_tau_loc = home + "/datasets/tau-dataset/mic_dev"
+one_up = path.abspath(path.join(home, ".."))
+metadata_tau_loc = one_up + "/metadata_dev/"
+audio_tau_loc = one_up + "/mic_dev/"
 
 # retrieve all filenames
 metadata_tau = os.listdir(metadata_tau_loc)
@@ -15,12 +15,13 @@ metadata_tau = os.listdir(metadata_tau_loc)
 keypoints = []
 stereo = []
 
+k = 1
 # start parsing through csv file and saving information
 for file in metadata_tau:  # parse through each audio split
     # get names of files
     root_name = file.partition('.')[0]
-    meta = metadata_tau_loc + "/" + root_name + ".csv"
-    audio = audio_tau_loc + "/" + root_name + ".wav"
+    meta = metadata_tau_loc + root_name + ".csv"
+    audio = audio_tau_loc + root_name + ".wav"
 
     # process audio file and record to other array
     intensities, sampling_rate = librosa.load(audio, mono=False)  # REPLACE THIS WITH SCIPY
@@ -43,11 +44,13 @@ for file in metadata_tau:  # parse through each audio split
         end.append(sound[2])
         angle.append(sound[3])
         distance.append(sound[5])
+        print(f"Running . . . Iteration number {k}")
+        k += 1
 
     # add onto keypoints mega-array
     file_info = [start, end, angle, distance]
     keypoints.append(file_info)
 
+# start looking into the keypoints mega-array
+print("Done!")
 
-for split in keypoints:
-    print(split)
