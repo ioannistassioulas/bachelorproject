@@ -48,4 +48,5 @@ for file in metadata_tau: # parse through audio file
 
 # start reading through all audio files
 
-
+for split in keypoints:
+    print(split)
