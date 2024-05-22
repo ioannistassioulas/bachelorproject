@@ -3,6 +3,7 @@ from audio_processing import *
 
 # get current directory
 home = os.getcwd()
+print(home)
 metadata_tau_loc = home + "/datasets/tau-dataset/metadata_dev/"
 audio_tau_loc = home + "/datasets/tau-dataset/mic_dev"
 
@@ -13,15 +14,16 @@ metadata_tau = os.listdir(metadata_tau_loc)
 # setup of array : [audio file, sound_event, metadata of event]
 keypoints = []
 stereo = []
+
 # start parsing through csv file and saving information
-for file in metadata_tau: # parse through audio file
+for file in metadata_tau:  # parse through each audio split
     # get names of files
     root_name = file.partition('.')[0]
     meta = metadata_tau_loc + "/" + root_name + ".csv"
     audio = audio_tau_loc + "/" + root_name + ".wav"
 
     # process audio file and record to other array
-    intensities, sampling_rate = librosa.load(audio, mono=False)
+    intensities, sampling_rate = librosa.load(audio, mono=False)  # REPLACE THIS WITH SCIPY
     stereo.append(intensities)
 
     # start reading through specific csv file
@@ -46,7 +48,6 @@ for file in metadata_tau: # parse through audio file
     file_info = [start, end, angle, distance]
     keypoints.append(file_info)
 
-# start reading through all audio files
 
 for split in keypoints:
     print(split)

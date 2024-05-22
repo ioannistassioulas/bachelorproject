@@ -1,13 +1,3 @@
-# Purpose: this code seeks to transform a .wav file into an array of datapoints that can be plotted into a waves
-# Upon accomplishing this, the code will export the datapoints to other parts of the project for the purpose of
-# generating spikes
-
-# This is done through multiple difference ways
-
-# To DO:
-# 1. upload all used data files into GitHub, such that code is consistent between both locations
-# 2. consider including a library file into the project such that I don't need to keep importing from here
-
 import numpy as np
 import librosa.display
 import matplotlib.pyplot as plt
@@ -22,8 +12,7 @@ import matplotlib.colors as colors
 from matplotlib.pyplot import cm
 
 
-# import stereo dataset
-
+# use scipy for this part
 def filter_waves(freq_threshold, audio, sr):
     """
     Filter soundwave by desired frequency
@@ -32,7 +21,7 @@ def filter_waves(freq_threshold, audio, sr):
     :param sr: sampling rate of the audio
     :return:
     """
-    freq_audio = librosa.stft(audio)
+    waves = 0
     return waves
 
 
@@ -171,14 +160,12 @@ def peak_difference(array, sr):
 
 def fix_broadcasting(x_values, y_values):
     """
-    :param x_facil: x_values of first wave
-    :param x_trig: x_values of second wave
-    :param y_facil: y_values of first wave
-    :param y_trig: y_values of second wave
-    :return facilitatory, trigger: the 2 waves, properly broadcasted
+    :param x_values: Two channel array of all x-values in the "encoded" dataset
+    :param y_values: Two channel array of all y-values in the "encoded" dataset
+    :return facilitatory, trigger: the 2 waves, properly broadcast together
     """
 
-    #unpack values into arrays to check
+    # unpack values into arrays to check
     xf = x_values[0]
     xt = x_values[1]
     yf = y_values[0]

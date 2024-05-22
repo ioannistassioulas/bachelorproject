@@ -2,13 +2,13 @@ import audio_processing
 from audio_processing import *
 
 # create sound waves
-sr = 44100
+sr = 48000
 angles = np.linspace(0, 180, 13)
 phase = np.cos(np.deg2rad(angles)) * 0.3 / 343
-print(phase)
 frequency = np.linspace(320, 8000, 25)
 t = np.linspace(0, 5, 5*sr)
-ild_test = [None] * len(angles)
+
+ild_test = []
 
 waveform_1 = np.zeros([len(angles), len(frequency)], dtype=object)
 waveform_2 = np.zeros([len(angles), len(frequency)], dtype=object)
@@ -23,7 +23,7 @@ for i in range(len(angles)):  # loop through angles
     amp_left = 1 / left.dot(left)
     amp_right = 1 / right.dot(right)
 
-    ild_test[i] = amp_left - amp_right
+    ild_test.append(amp_left - amp_right)
 
     for j in range(len(frequency)):  # loop through frequencies
         waveform_1[i][j] = amp_right * np.sin(t * frequency[j])  # left channel
@@ -48,7 +48,7 @@ for i in range(len(angles)):  # by angle
         waves = np.array([waveform_1[i][j], waveform_2[i][j]])
         spike_data, spike_values = audio_processing.zero_crossing(waves, sr)
         spike_x, spike_y = audio_processing.peak_difference(waves, sr)
-g
+
         # fix any broadcasting issues
         spike_data, spike_values = audio_processing.fix_broadcasting(spike_data, spike_values)
         spike_x, spike_y = audio_processing.fix_broadcasting(spike_x, spike_y)
@@ -64,7 +64,7 @@ g
         level_differences = spike_y[1] - spike_y[0]
         level_difference[i][j] = np.mean(level_differences)
 
-        #check to make sure of progress are still working
+        # check to make sure of progress are still working
         print(f"{k/(len(angles) * len(frequency))*100}%")
         k += 1
 
@@ -102,7 +102,5 @@ for n in range(len(angles)):
 
 plt.legend()
 plt.show()
-
-# start passing numbers into spiking neural network
 
 
