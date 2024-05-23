@@ -14,6 +14,7 @@ def forward_euler_lif(volt, current, threshold, resist=5e7, cap=1e-10, time_step
     :param cap: capacitance of the membrane
     :param threshold: voltage threshold for when spike will fire
     :param time_step: timestep to evaluate potential
+
     :return v: voltage at following timestep
     :return spike: 1 if spike is sent, 0 otherwise
     """
@@ -31,17 +32,17 @@ def forward_euler_lif(volt, current, threshold, resist=5e7, cap=1e-10, time_step
     return volt, spike
 
 
-def tde_neuron(time, facilitatory, trigger, theta, refractory=10, sr=1):
+def tde_neuron(start, time, facilitatory, trigger, theta, sr, refractory=500):
     """
     TDE model for receiving 2 spike trains and then returning corresponding
     EPSC.
-
-    :param time: how long to read for
+    :param start: timestamp of beginning of sound event
+    :param time: timestep of
     :param facilitatory: spike train of first input that is received
     :param trigger: spike train of second input that is received
     :param theta: the cutoff threshold for the LiF neuron
     :param refractory: how many timesteps to prevent before next fire
-    :param sr: sampling rate, set to 1 for simplicity atm
+    :param sr: sampling rate of audiofile
 
     :return espc: excitatory post synpatic current
     :return voltage, the recording of the voltage change of the neuron
@@ -49,17 +50,16 @@ def tde_neuron(time, facilitatory, trigger, theta, refractory=10, sr=1):
     """
 
     # define amount of timesteps to be looped over
-    timestep = time * sr
+    timestep = int(time * sr)
 
-    # convert timestamp information into spike train
     # create array of timesteps to send spikes and create spike train for facilitatory input
-    facilitatory = facilitatory * sr
+    facilitatory = (facilitatory - start) * sr  # subtract by start time such that length is consistent with timestep length
     current_f = torch.zeros(timestep)
     for j in facilitatory:
-        current_f[int(j)-1] = torch.ones(1)  # at each index of the time step you input in facilitatory array
+        current_f[int(j)] = torch.ones(1)  # at each index of the time step you input in facilitatory array
 
     # repeating for trigger input
-    trigger = trigger * sr
+    trigger = (trigger - start) * sr
     current_t = torch.zeros(timestep)
     for j in trigger:
         current_t[int(j)] = torch.ones(1)
@@ -105,10 +105,10 @@ def tde_neuron(time, facilitatory, trigger, theta, refractory=10, sr=1):
     return epsc, voltage_record, spike_record
 
 
-def tde_model(time, facilitatory, trigger, theta_input, theta_evaluate, sr=1):
+def tde_model(start, time, facilitatory, trigger, theta_input, theta_evaluate, sr):
     """
     Generate spikes via potential
-
+    :param start: timestamp of beginning of sound event
     :param time: how long the recording for spike input takes place
     :param facilitatory:  the spike chain for the facilitatory input
     :param trigger: The spike chain for the trigger input
@@ -120,10 +120,10 @@ def tde_model(time, facilitatory, trigger, theta_input, theta_evaluate, sr=1):
     """
 
     # define timesteps where model will be defined over
-    timesteps = sr * time
+    timesteps = int(sr * time)
 
     # Generate voltage for LiF model
-    epsc, membrane_volt, spike = tde_neuron(time, facilitatory, trigger, theta_input)
+    epsc, membrane_volt, spike = tde_neuron(start, time, facilitatory, trigger, theta_input, sr)
 
     # feed membrane recording as input for new neuron
     final_spikes = []
@@ -133,33 +133,33 @@ def tde_model(time, facilitatory, trigger, theta_input, theta_evaluate, sr=1):
 
     return epsc, spike, membrane_volt, final_spikes
 
-
-# current_fac = torch.cat((torch.zeros(10, 1), torch.ones(1, 1), torch.zeros(189, 1), torch.ones(1, 1), torch.zeros(199, 1)), 0)
-# current_trig = torch.cat((torch.zeros(15, 1), torch.ones(1, 1), torch.zeros(189, 1), torch.ones(1, 1), torch.zeros(194, 1)), 0)
-time1 = 100
-current_fac = np.array([11, 25, 71])
-current_trig = np.array([13, 27, 73])
-# model the TDE reaction to above inputs
-# post_synaptic, v, i = tde_neuron(time1, current_fac, current_trig, 1e20)
-
-# Final LiF neuron modeling the voltage
-post_synaptic, i, v, spikes = tde_model(time1, current_fac, current_trig, 1e20, 2e6)
-
-# it works!
-# plot out the dataset from what was created
-fig, ax = plt.subplots(2, 1)
-ax[0].plot(np.arange(len(post_synaptic)), post_synaptic, color="blue", label="recording")
-ax[0].scatter(current_fac, [1e7] * len(current_fac), color="red", marker="x", label="current")
-ax[0].scatter(current_trig, [1e7] * len(current_trig), color="blue", marker="x", label="trigger")
-ax[0].plot(np.arange(len(i)), i, label="tde triggering")
-ax[0].plot(np.arange(len(v)), v, color="red", label="voltage")
-# ax[0].axhline(thresh, color="black", label=f"threshold={thresh}")
-ax[0].legend()
-
-ax[1].plot(np.arange(len(post_synaptic)), np.array(post_synaptic), label="voltage")
-ax[1].axhline(2e6, color="black", label="threshold")
-ax[1].scatter(np.arange(len(spikes)), np.array(spikes) * 2e6, label="spikes", marker="|", color="grey")
-
-fig.suptitle("Spiking behavior of TDE model")
-plt.legend()
-plt.show()
+#
+# # current_fac = torch.cat((torch.zeros(10, 1), torch.ones(1, 1), torch.zeros(189, 1), torch.ones(1, 1), torch.zeros(199, 1)), 0)
+# # current_trig = torch.cat((torch.zeros(15, 1), torch.ones(1, 1), torch.zeros(189, 1), torch.ones(1, 1), torch.zeros(194, 1)), 0)
+# time1 = 100
+# current_fac = np.array([11, 25, 71])
+# current_trig = np.array([13, 27, 73])
+# # model the TDE reaction to above inputs
+# # post_synaptic, v, i = tde_neuron(time1, current_fac, current_trig, 1e20)
+#
+# # Final LiF neuron modeling the voltage
+# post_synaptic, i, v, spikes = tde_model(time1, current_fac, current_trig, 1e20, 2e6)
+#
+# # it works!
+# # plot out the dataset from what was created
+# fig, ax = plt.subplots(2, 1)
+# ax[0].plot(np.arange(len(post_synaptic)), post_synaptic, color="blue", label="recording")
+# ax[0].scatter(current_fac, [1e7] * len(current_fac), color="red", marker="x", label="current")
+# ax[0].scatter(current_trig, [1e7] * len(current_trig), color="blue", marker="x", label="trigger")
+# ax[0].plot(np.arange(len(i)), i, label="tde triggering")
+# ax[0].plot(np.arange(len(v)), v, color="red", label="voltage")
+# # ax[0].axhline(thresh, color="black", label=f"threshold={thresh}")
+# ax[0].legend()
+#
+# ax[1].plot(np.arange(len(post_synaptic)), np.array(post_synaptic), label="voltage")
+# ax[1].axhline(2e6, color="black", label="threshold")
+# ax[1].scatter(np.arange(len(spikes)), np.array(spikes) * 2e6, label="spikes", marker="|", color="grey")
+#
+# fig.suptitle("Spiking behavior of TDE model")
+# plt.legend()
+# plt.show()

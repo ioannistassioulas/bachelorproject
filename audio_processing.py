@@ -202,7 +202,7 @@ def set_recording(x_values, y_values, start, stop):
     :param y_values: 2xN array of y_values of spike information, first and second waves
     :param start: value of time to start recording
     :param stop: value of time to end recording
-    :return x_values, y_values: original x and y, now properly snipped for the recording
+    :return x, y: original x and y, now properly snipped for the recording
     """
 
     # define start and stop array masks, based on time values greater than start time and less than end time
@@ -211,12 +211,15 @@ def set_recording(x_values, y_values, start, stop):
     stop_index = x_values[0] < stop
 
     # apply boolean slices onto the x values and y values
-    x_values[0] = x_values[0][np.logical_and(start_index, stop_index)]
-    y_values[0] = y_values[0][np.logical_and(start_index, stop_index)]
-    x_values[1] = x_values[1][np.logical_and(start_index, stop_index)]
-    y_values[1] = y_values[1][np.logical_and(start_index, stop_index)]
+    xf = x_values[0][np.logical_and(start_index, stop_index)]
+    yf = y_values[0][np.logical_and(start_index, stop_index)]
+    xt = x_values[1][np.logical_and(start_index, stop_index)]
+    yt = y_values[1][np.logical_and(start_index, stop_index)]
 
-    return x_values, y_values
+    x = [xf, xt]
+    y = [yf, yt]
+
+    return x, y
 
 
 def angle_itd(distance, time, speed=343):
