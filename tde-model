@@ -11,9 +11,9 @@ def spike_fn(x):
 def tde(tau_fac, tau_trg, tau_mem, time_step, n_time_steps, fac_in, trg_in):
     """
 
-    :param tau_fac:
-    :param tau_trg:
-    :param tau_mem:
+    :param tau_fac: time constant for fac input
+    :param tau_trg: time constant for trig input
+    :param tau_mem: time constant for membrane voltage
     :param time_step: sampling rate of the audio file taken
     :param n_time_steps:
     :param fac_in:
@@ -21,11 +21,12 @@ def tde(tau_fac, tau_trg, tau_mem, time_step, n_time_steps, fac_in, trg_in):
     :return:
     """
 
+    # adjusting
     alpha   = torch.exp(-time_step/tau_fac)
     beta    = torch.exp(-time_step/tau_trg)
     gamma   = torch.exp(-time_step/tau_mem)
 
-    # create
+    # create file of zeros to store all spiking action.
     fac = torch.zeros(fac_in.shape[1])
     trg = torch.zeros(fac_in.shape[1])
     mem = torch.zeros(fac_in.shape[1])
@@ -37,9 +38,10 @@ def tde(tau_fac, tau_trg, tau_mem, time_step, n_time_steps, fac_in, trg_in):
     trg_rec = []
 
     for t in range(n_time_steps):
-        mthr = mem-1.0
-        out = spike_fn(mthr)
+        mthr = mem-1.0  # membrane threshold
+        out = spike_fn(mthr)  # all values above threshold, return spike
 
+        #
         new_fac = alpha*fac + fac_in[t]
         new_trg = beta*trg + new_fac*trg_in[t]
         new_mem = (gamma*mem + new_trg)*(1.0-out)
