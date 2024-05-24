@@ -1,0 +1,56 @@
+import audio_processing as ap
+from audio_processing import *
+
+
+def spike_fn(x):
+    out = torch.zeros_like(x)
+    out = torch.where(x > 0, 1.0, out)
+    return out
+
+
+def tde(tau_fac, tau_trg, tau_mem, time_step, n_time_steps, fac_in, trg_in):
+    """
+
+    :param tau_fac:
+    :param tau_trg:
+    :param tau_mem:
+    :param time_step: sampling rate of the audio file taken
+    :param n_time_steps:
+    :param fac_in:
+    :param trg_in:
+    :return:
+    """
+
+    alpha   = torch.exp(-time_step/tau_fac)
+    beta    = torch.exp(-time_step/tau_trg)
+    gamma   = torch.exp(-time_step/tau_mem)
+
+    # create
+    fac = torch.zeros(fac_in.shape[1])
+    trg = torch.zeros(fac_in.shape[1])
+    mem = torch.zeros(fac_in.shape[1])
+
+    # create recording arrays to save each timestep
+    mem_rec = []
+    spk_rec = []
+    fac_rec = []
+    trg_rec = []
+
+    for t in range(n_time_steps):
+        mthr = mem-1.0
+        out = spike_fn(mthr)
+
+        new_fac = alpha*fac + fac_in[t]
+        new_trg = beta*trg + new_fac*trg_in[t]
+        new_mem = (gamma*mem + new_trg)*(1.0-out)
+
+        mem_rec.append(mem)
+        spk_rec.append(out)
+        fac_rec.append(fac)
+        trg_rec.append(trg)
+
+        mem = new_mem
+        fac = new_fac
+        trg = new_trg
+
+    return torch.stack(mem_rec, axis=1), torch.stack(spk_rec, axis=1), torch.stack(fac_rec, axis=1), torch.stack(trg_rec, axis=1)
