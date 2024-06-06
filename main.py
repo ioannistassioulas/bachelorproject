@@ -2,34 +2,24 @@ import audio_processing
 from audio_processing import *
 
 # create sound waves
-sr = 48000
-angles = np.linspace(0, 90, 10)
-phase = np.cos(np.deg2rad(angles)) * 0.3 / 343
-frequency = np.linspace(320, 8000, 25)
-t = np.linspace(0, 5, 5*sr)
 
-ild_test = []
 
-waveform_1 = np.zeros([len(angles), len(frequency)], dtype=object)
-waveform_2 = np.zeros([len(angles), len(frequency)], dtype=object)
+def generate_test_waves(angle, frequency, sr):
 
-k = 1
-for i in range(len(angles)):  # loop through angles
-    theta = angles[i]
-    radius = np.array([np.cos(theta), np.sin(theta), 0])
+    phase = np.cos(np.deg2rad(angle)) * 0.3 / 343
+    t = np.linspace(0, 5, 5*sr)
+
+    radius = np.array([np.cos(angle), np.sin(angle), 0])
     left = radius + np.array([0.15, 0, 0])
     right = radius + np.array([-0.15, 0, 0])
 
     amp_left = 1 / left.dot(left)
     amp_right = 1 / right.dot(right)
 
-    ild_test.append(amp_left - amp_right)
+    waveform_1 = amp_right * np.sin(t * frequency)  # right channel
+    waveform_2 = amp_left * np.sin((t - phase[i]) * frequency)  # left channel
 
-    for j in range(len(frequency)):  # loop through frequencies
-        waveform_1[i][j] = amp_right * np.sin(t * frequency[j])  # left channel
-        waveform_2[i][j] = amp_left * np.sin((t - phase[i]) * frequency[j])  # right channel
-        print(f"{100 * k / (len(angles) * len(frequency)) }%")
-        k += 1
+    return waveform_1, waveform_2
 
 
 # create arrays to store ITD and ILD information

@@ -11,82 +11,49 @@ import pandas as pd
 import matplotlib.cm as mplcm
 import matplotlib.colors as colors
 from matplotlib.pyplot import cm
+from scipy import signal
 
 
-# use scipy for this part
-def filter_waves(freq_threshold, audio, sr):
+# generate SIM data set
+def generate_test_waves(angle, frequency, sr, time):
+
+    phase = np.cos(np.deg2rad(angle)) * 0.08 / 343
+    t = np.linspace(0, time, time*sr)
+
+    radius = np.array([np.cos(angle), np.sin(angle), 0])
+    left = radius + np.array([0.15, 0, 0])
+    right = radius + np.array([-0.15, 0, 0])
+
+    amp_left = 1 / left.dot(left)
+    amp_right = 1 / right.dot(right)
+
+    waveform_1 = amp_left * np.sin(t * frequency)  # right channel
+    waveform_2 = amp_right * np.sin((t - phase) * frequency)  # left channel
+
+    return waveform_1, waveform_2
+
+
+# filtering of real data sound waves
+def filter_waves(sig, sr, band ="lp"):
     """
-    Filter soundwave by desired frequency
-    :param freq: desired frequency to isolate
-    :param audio: audio file to be filtered
+    Apply butterworth digital signal filter on soundwaves
+    :param sig: audio file to be filtered
     :param sr: sampling rate of the audio
+    :param band: default low-pass, but can change to high-pass 'hp' or bandpass 'bp'
     :return:
     """
-    waves = 0
+    sos = signal.butter(10, 0.5, btype=band, output='sos', fs=sr)
+
+    left = sig[0]
+    right = sig[2]
+
+    filtered_left = signal.sosfilt(sos, left)
+    filtered_right = signal.sosfilt(sos, right)
+
+    waves = [filtered_left, filtered_right]
     return waves
 
-
-def count_peak(array):
-    """
-    Pass multichannel audiofile dataset through and return array of spikes
-    indicating which channel produced the highest intensity at given sample.
-
-    :param array: a NxM array of N channels and M samples giving audio intensity
-    :return: spike_numbers, a NxM array of N channels and M samples giving
-    boolean value for spike
-    """
-    spike_numbers = np.zeros([len(array), len(array.transpose())])
-
-    # send a signal each time one microphone detects the louder audio
-    for i in range(len(array.transpose())):  # 'i' is the interval of each timestep
-        peak = np.max(array.transpose()[i])
-        for j in range(len(array)):  # 'j' is the channel source
-            if array[j][i] == peak:
-                spike_numbers[j][i] = 1
-
-    return spike_numbers
-
-
-def peak_diff(array):
-    left_channel = array[0]
-    right_channel = array[1]
-
-    return left_channel - right_channel
-
-
-def count_peak_diff(array):
-    """
-    Adaption of count_peak() - now, the time difference between is counted
-    and spikes are produced based on how much louder one is than another
-
-    :param array: a NxM array of N channels and M samples giving audio intensity
-    :return: spike_numbers, a NxM array of N channels and M samples and each entry
-    gives a frequency for spike rate
-    """
-
-    left_channel = np.zeros(len(array.transpose()))
-    right_channel = np.zeros(len(array.transpose()))
-
-    for i in range(len(array.transpose())):
-        spike_rate = np.round((array[0][i] - array[1][i]) * 1000)  # spike rate determined by comparison to mean
-        if spike_rate >= 0:  # assign spike rate to corresponding spot on spike matrix
-            left_channel[i] = np.abs(spike_rate)
-        else:
-            right_channel[i] = np.abs(spike_rate)
-
-    return left_channel, right_channel
-
-
-def count_peak_ratio(array):
-    """
-    Count the ratio of the peak of each array at each timestep (left over right)
-    :param array: the 2 channel audio source
-    :return: ratio
-    """
-    left_ear = array[0]
-    right_ear = array[1]
-
-    return left_ear / right_ear
+# count zeros and maxima
 
 
 def zero_crossing(array, sr):
@@ -158,6 +125,8 @@ def peak_difference(array, sr):
 
     return spike_data, spike_values
 
+# slice audio file to detect the exact sound event you're looking for
+
 
 def fix_broadcasting(x_values, y_values):
     """
@@ -222,6 +191,9 @@ def set_recording(x_values, y_values, start, stop):
     return x, y
 
 
+
+# calculate angles from binaural cues
+
 def angle_itd(distance, time, speed=343):
     """
     Given a certain time difference, calculates the angle corresponding to the DoA
@@ -240,4 +212,26 @@ def angle_ild(distance, amplitude):
     :param amplitude: recorded interaural level difference
     :return: angle, given by formula
     """
-    return np.rad2deg(np.arccos(0.5 * amplitude / distance))
+    return np.rad2deg(np.arcsin(0.5 * amplitude / distance))
+
+# defunct atm
+
+def count_peak(array):
+    """
+    Pass multichannel audiofile dataset through and return array of spikes
+    indicating which channel produced the highest intensity at given sample.
+
+    :param array: a NxM array of N channels and M samples giving audio intensity
+    :return: spike_numbers, a NxM array of N channels and M samples giving
+    boolean value for spike
+    """
+    spike_numbers = np.zeros([len(array), len(array.transpose())])
+
+    # send a signal each time one microphone detects the louder audio
+    for i in range(len(array.transpose())):  # 'i' is the interval of each timestep
+        peak = np.max(array.transpose()[i])
+        for j in range(len(array)):  # 'j' is the channel source
+            if array[j][i] == peak:
+                spike_numbers[j][i] = 1
+
+    return spike_numbers

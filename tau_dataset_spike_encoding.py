@@ -61,90 +61,119 @@ for file in metadata_tau:  # parse through each audio split
 # print complete message to timestamp
 print(f"Reading data done! Time elapsed = {t.time() - start_time}s")
 
-# create memory arrays to hold all itd and ild values
-time_difference = []
-level_difference = []
-times = []
-gt = []
-# index to parse through file
-index = 0
-for file in keypoints:
+#Practice filtering out all the data
+sig = stereo[0]
+left = sig[0]
 
-    timestamp = t.time()
-    # select sound_file to analyze
-    sound_data = stereo[index]
+right = sig[2]
+sos = signal.butter(10, [0.1, 0.5], 'bandpass', output='sos')
 
-    waves = [sound_data[0], sound_data[2]]
 
-    # generate ITD/ILD data of that subset
-    itd_x, itd_y = ap.zero_crossing(waves, sr)
-    ild_x, ild_y = ap.peak_difference(waves, sr)
+filtered_left = signal.sosfilt(sos, left)
+filtered_right = signal.sosfilt(sos, right)
+waves = audio_processing.filter_waves(stereo[0], sr)
 
-    fig, ax = plt.subplots(2, 1)
-    ax[0].plot(np.arange(len(waves[0])), waves[0])
-    ax[1].plot(np.arange(len(waves[1])), waves[1])
-    ax[0].scatter(itd_x[0] * sr, itd_y[0])
-    ax[1].scatter(itd_x[1] * sr, itd_y[1])
-    plt.show()
+filtered_left = waves[0]
+filtered_right = waves[1]
+fig, ax = plt.subplots(1, 2)
+ax[0].plot(np.arange(len(left)), left, color="red")
+ax[0].title("Unfiltered sound event")
+ax[1].plot(np.arange(len(filtered_left)), filtered_left, color="blue")
+ax[1].title("Filtered sound event")
 
-    jindex = 0
-    for split in np.array(file).transpose():
+fig.suptitle("Effect of filtering soundwaves")
+plt.show()
 
-        # import metadata for ground-truth comparison
-        start = split[0]
-        end = split[1]
-        ground_truth_theta = split[2]
-        ground_truth_distance = split[3]
 
-        # set recording to analyze only that one sound event
-        xt, yt = ap.set_recording(itd_x, itd_y, start, end)
-        xl, yl = ap.set_recording(ild_x, ild_y, start, end)
 
-        # fix any issues in broadcasting
-        xt, yt = ap.fix_broadcasting(xt, yt)
-        xl, yl = ap.fix_broadcasting(xl, yl)
 
-        # append critical values into time difference array
-        time_difference.append(xt)
-        print(xt)
-        level_difference.append(yt)
-        times.append([start, end])
-        gt.append([ground_truth_theta, ground_truth_distance, f"sound file number {index + 1}, sound event number {jindex + 1}, timespan = {start}s to {end}s"])
-        jindex += 1
 
-    # iterate the index of the sound_file
-    print(f"Split number {index + 1} done! Time elapsed = {t.time() - timestamp}s")
-    index += 1
+# # create memory arrays to hold all itd and ild values
+# time_difference = []
+# level_difference = []
+# times = []
+# gt = []
+# # index to parse through file
+# index = 0
+# for file in keypoints:
+#
+#     timestamp = t.time()
+#     # select sound_file to analyze
+#     sound_data = stereo[index]
+#
+#     waves = [sound_data[0], sound_data[2]]
+#
+#     # generate ITD/ILD data of that subset
+#     itd_x, itd_y = ap.zero_crossing(waves, sr)
+#     ild_x, ild_y = ap.peak_difference(waves, sr)
+#
+#     fig, ax = plt.subplots(2, 1)
+#     ax[0].plot(np.arange(len(waves[0])), waves[0])
+#     ax[1].plot(np.arange(len(waves[1])), waves[1])
+#     ax[0].scatter(itd_x[0] * sr, itd_y[0])
+#     ax[1].scatter(itd_x[1] * sr, itd_y[1])
+#     plt.show()
+#
+#     jindex = 0
+#     for split in np.array(file).transpose():
+#
+#         # import metadata for ground-truth comparison
+#         start = split[0]
+#         end = split[1]
+#         ground_truth_theta = split[2]
+#         ground_truth_distance = split[3]
+#
+#         # set recording to analyze only that one sound event
+#         xt, yt = ap.set_recording(itd_x, itd_y, start, end)
+#         xl, yl = ap.set_recording(ild_x, ild_y, start, end)
+#
+#         # fix any issues in broadcasting
+#         xt, yt = ap.fix_broadcasting(xt, yt)
+#         xl, yl = ap.fix_broadcasting(xl, yl)
+#
+#         # append critical values into time difference array
+#         time_difference.append(xt)
+#         print(xt)
+#         level_difference.append(yt)
+#         times.append([start, end])
+#         gt.append([ground_truth_theta, ground_truth_distance, f"sound file number {index + 1}, sound event number {jindex + 1}, timespan = {start}s to {end}s"])
+#         jindex += 1
+#
+#     # iterate the index of the sound_file
+#     print(f"Split number {index + 1} done! Time elapsed = {t.time() - timestamp}s")
+#     index += 1
+#
+# # timestamp to find out when zero encoding is done
+# print(f"zero-encoding complete! Total time elapse = {t.time() - start_time}s")
 
-# timestamp to find out when zero encoding is done
-print(f"zero-encoding complete! Total time elapse = {t.time() - start_time}s")
 
-# start sending data in to run for spikes
-for i in range(len(times)):
-    start = times[i][0]  # time of recording starting, prevents OOB errors
-    timespan = times[i][1] - times[i][0]  # timespan in numbers
-    facilitatory_time, trigger_time = time_difference[i]  # save itd and ild info into holder variables for readability
-    facilitatory_level, trigger_level = level_difference[i]
 
-    # start running tde_model
-    post_synaptic, i, v, spikes = sn.tde_model(start, timespan, facilitatory_time, trigger_time, 1e20, 1e20, sr)
-
-    print(f"TDE modeling complete! Total Time elapse = {t.time() - start_time}s")
-
-    # plot out dataset
-    fig, ax = plt.subplots(2, 1)
-    ax[0].plot(np.arange(len(post_synaptic)), post_synaptic, color="blue", label="recording")
-    ax[0].scatter((facilitatory_time - start) * sr, [1e7] * len((facilitatory_time - start) * sr), color="red", marker="x", label="current")
-    ax[0].scatter((trigger_time - start) * sr, [1e7] * len((trigger_time - start) * sr), color="blue", marker="x", label="trigger")
-    ax[0].plot(np.arange(len(i)), i, label="tde triggering")
-    ax[0].plot(np.arange(len(v)), v, color="red", label="voltage")
-    # ax[0].axhline(thresh, color="black", label=f"threshold={thresh}")
-    ax[0].legend()
-
-    ax[1].plot(np.arange(len(post_synaptic)), np.array(post_synaptic), label="voltage")
-    ax[1].scatter(np.arange(len(spikes)), np.array(spikes) * 2e6, label="spikes", marker="|", color="grey")
-
-    fig.suptitle(gt[i][2])
-    plt.legend()
-    plt.show()
+# # start sending data in to run for spikes
+# for i in range(len(times)):
+#     start = times[i][0]  # time of recording starting, prevents OOB errors
+#     timespan = times[i][1] - times[i][0]  # timespan in numbers
+#     facilitatory_time, trigger_time = time_difference[i]  # save itd and ild info into holder variables for readability
+#     facilitatory_level, trigger_level = level_difference[i]
+#
+#     # start running tde_model
+#     post_synaptic, i, v, spikes = sn.tde_model(start, timespan, facilitatory_time, trigger_time, 1e20, 1e20, sr)
+#
+#     print(f"TDE modeling complete! Total Time elapse = {t.time() - start_time}s")
+#
+#     # plot out dataset
+#     fig, ax = plt.subplots(2, 1)
+#     ax[0].plot(np.arange(len(post_synaptic)), post_synaptic, color="blue", label="recording")
+#     ax[0].scatter((facilitatory_time - start) * sr, [1e7] * len((facilitatory_time - start) * sr), color="red", marker="x", label="current")
+#     ax[0].scatter((trigger_time - start) * sr, [1e7] * len((trigger_time - start) * sr), color="blue", marker="x", label="trigger")
+#     ax[0].plot(np.arange(len(i)), i, label="tde triggering")
+#     ax[0].plot(np.arange(len(v)), v, color="red", label="voltage")
+#     # ax[0].axhline(thresh, color="black", label=f"threshold={thresh}")
+#     ax[0].legend()
+#
+#     ax[1].plot(np.arange(len(post_synaptic)), np.array(post_synaptic), label="voltage")
+#     ax[1].scatter(np.arange(len(spikes)), np.array(spikes) * 2e6, label="spikes", marker="|", color="grey")
+#
+#     fig.suptitle(gt[i][2])
+#     plt.legend()
+#     plt.show()
 
