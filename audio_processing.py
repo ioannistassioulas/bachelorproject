@@ -34,7 +34,7 @@ def generate_test_waves(angle, frequency, sr, time):
 
 
 # filtering of real data sound waves
-def filter_waves(sig, sr, band ="lp"):
+def filter_waves(sig, band ="lowpass"):
     """
     Apply butterworth digital signal filter on soundwaves
     :param sig: audio file to be filtered
@@ -42,7 +42,10 @@ def filter_waves(sig, sr, band ="lp"):
     :param band: default low-pass, but can change to high-pass 'hp' or bandpass 'bp'
     :return:
     """
-    sos = signal.butter(10, 0.5, btype=band, output='sos', fs=sr)
+    wc = 0.5
+    if band == "bandpass":
+        wc = [0.1, 0.5]
+    sos = signal.butter(10, wc, btype=band, output='sos')
 
     left = sig[0]
     right = sig[2]
@@ -53,9 +56,8 @@ def filter_waves(sig, sr, band ="lp"):
     waves = [filtered_left, filtered_right]
     return waves
 
+
 # count zeros and maxima
-
-
 def zero_crossing(array, sr):
     """
     Encode spike data by writing down zero crossings
