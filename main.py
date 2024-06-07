@@ -4,9 +4,9 @@ from audio_processing import *
 # create sound waves
 
 frequency = np.linspace(250, 10000, 40)
-angles = np.linspace(0, 90, 10)
+angles = np.linspace(0, 90, 19)
 sr = 48000
-distance = 0.001
+distance = 0.3
 
 # create arrays to store ITD and ILD information
 time_difference = np.zeros([len(angles), len(frequency)])
@@ -39,7 +39,7 @@ for i in range(len(angles)):  # by angle
         time_differences = spike_data[1] - spike_data[0]  # find difference in zero crossings from both channels
         time_difference[i][j] = np.mean(time_differences)  # return mean into metadata super array
 
-        level_differences = spike_y[1] - spike_y[0]
+        level_differences = np.abs(spike_y[1] - spike_y[0])
         level_difference[i][j] = np.mean(level_differences)
 
         # check to make sure of progress are still working
@@ -47,22 +47,22 @@ for i in range(len(angles)):  # by angle
         k += 1
 
 # generate "predicted" angles via the theory
-angle_time = audio_processing.angle_itd(distance, time_difference)
-angle_level = audio_processing.angle_ild(distance, level_difference)
+# angle_time = audio_processing.angle_itd(distance, time_difference)
+# angle_level = audio_processing.angle_ild(distance, level_difference)
 
 # generate graphs for ITD
 fig_time = plt.figure()
 ax = fig_time.add_subplot(111)
-color = iter(cm.rainbow(np.linspace(0, 1, len(angles))))  # create unique colors for each plot
+color = iter(cm.rainbow(np.linspace(0, 1, len(frequency))))  # create unique colors for each plot
 
-for m in range(len(angles)):
+for m in range(len(frequency)):
     c = next(color)
-    ax.scatter(frequency, angle_time[m], color=c,  label=f"angle = {angles[m]}")
-    ax.axhline(angles[m], color=c)
+    ax.scatter(angles, time_difference.transpose()[m], color=c,  label=f"angle = {frequency[m]}")
+    # ax.axhline(frequ[m], color=c)
 
     ax.set_title("Performance of zero crossings method for angles")
-    ax.set_xlabel("Frequency (Hz)")
-    ax.set_ylabel("Angle")
+    ax.set_xlabel("Angle (degrees)")
+    ax.set_ylabel("ITD")
 
 plt.legend()
 plt.show()
@@ -70,15 +70,15 @@ plt.show()
 # likewise for ILD
 fig_level = plt.figure()
 ax = fig_level.add_subplot(111)
-color = iter(cm.rainbow(np.linspace(0, 1, len(angles))))  # create unique colors for each plot
+color = iter(cm.rainbow(np.linspace(0, 1, len(frequency))))  # create unique colors for each plot
 
-for n in range(len(angles)):
+for n in range(len(frequency)):
     c = next(color)
-    ax.scatter(frequency, angle_level[n], color=c, label=f"Angles = {angles[n]}")
-    ax.axhline(angles[n], color=c)
+    ax.scatter(angles, level_difference.transpose()[n], color=c, label=f"Angles = {frequency[n]}")
+    # ax.axhline(angles[n], color=c)
 
     ax.set_title("Performance of level difference for each angle")
-    ax.set_xlabel("Frequencies")
+    ax.set_xlabel("Angle Degrees")
     ax.set_ylabel("ILD")
 
 plt.legend()
