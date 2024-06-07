@@ -3,24 +3,10 @@ from audio_processing import *
 
 # create sound waves
 
-
-def generate_test_waves(angle, frequency, sr):
-
-    phase = np.cos(np.deg2rad(angle)) * 0.3 / 343
-    t = np.linspace(0, 5, 5*sr)
-
-    radius = np.array([np.cos(angle), np.sin(angle), 0])
-    left = radius + np.array([0.15, 0, 0])
-    right = radius + np.array([-0.15, 0, 0])
-
-    amp_left = 1 / left.dot(left)
-    amp_right = 1 / right.dot(right)
-
-    waveform_1 = amp_right * np.sin(t * frequency)  # right channel
-    waveform_2 = amp_left * np.sin((t - phase[i]) * frequency)  # left channel
-
-    return waveform_1, waveform_2
-
+frequency = np.linspace(250, 10000, 40)
+angles = np.linspace(0, 90, 10)
+sr = 48000
+distance = 0.001
 
 # create arrays to store ITD and ILD information
 time_difference = np.zeros([len(angles), len(frequency)])
@@ -32,10 +18,12 @@ k = 1
 # go through all angles and frequencies again and apply tests
 for i in range(len(angles)):  # by angle
     for j in range(len(frequency)):  # by frequency
-
         cutoff = 0
         endtime = 99
-        waves = np.array([waveform_1[i][j], waveform_2[i][j]])
+
+        l, r = audio_processing.generate_test_waves(angles[i], frequency[j], sr, 5, distance)
+        waves = np.array([l, r])
+
         spike_data, spike_values = audio_processing.zero_crossing(waves, sr)
         spike_x, spike_y = audio_processing.peak_difference(waves, sr)
 
@@ -58,6 +46,9 @@ for i in range(len(angles)):  # by angle
         print(f"{k/(len(angles) * len(frequency))*100}%")
         k += 1
 
+# generate "predicted" angles via the theory
+angle_time = audio_processing.angle_itd(distance, time_difference)
+angle_level = audio_processing.angle_ild(distance, level_difference)
 
 # generate graphs for ITD
 fig_time = plt.figure()
@@ -66,8 +57,8 @@ color = iter(cm.rainbow(np.linspace(0, 1, len(angles))))  # create unique colors
 
 for m in range(len(angles)):
     c = next(color)
-    ax.scatter(frequency, time_difference[m], color=c,  label=f"angle = {angles[m]}")
-    ax.axhline(phase[m], color=c)
+    ax.scatter(frequency, angle_time[m], color=c,  label=f"angle = {angles[m]}")
+    ax.axhline(angles[m], color=c)
 
     ax.set_title("Performance of zero crossings method for angles")
     ax.set_xlabel("Frequency (Hz)")
@@ -83,8 +74,8 @@ color = iter(cm.rainbow(np.linspace(0, 1, len(angles))))  # create unique colors
 
 for n in range(len(angles)):
     c = next(color)
-    ax.scatter(frequency, level_difference[n], color=c, label=f"Angles = {angles[n]}")
-    ax.axhline(ild_test[n], color=c)
+    ax.scatter(frequency, angle_level[n], color=c, label=f"Angles = {angles[n]}")
+    ax.axhline(angles[n], color=c)
 
     ax.set_title("Performance of level difference for each angle")
     ax.set_xlabel("Frequencies")

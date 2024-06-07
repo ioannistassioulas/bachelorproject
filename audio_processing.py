@@ -15,14 +15,14 @@ from scipy import signal
 
 
 # generate SIM data set
-def generate_test_waves(angle, frequency, sr, time):
+def generate_test_waves(angle, frequency, sr, time, distance):
 
-    phase = np.cos(np.deg2rad(angle)) * 0.08 / 343
+    phase = np.cos(np.deg2rad(angle)) * distance / 343
     t = np.linspace(0, time, time*sr)
 
     radius = np.array([np.cos(angle), np.sin(angle), 0])
-    left = radius + np.array([0.15, 0, 0])
-    right = radius + np.array([-0.15, 0, 0])
+    left = radius + np.array([distance/2, 0, 0])
+    right = radius + np.array([-distance/2, 0, 0])
 
     amp_left = 1 / left.dot(left)
     amp_right = 1 / right.dot(right)
@@ -193,9 +193,7 @@ def set_recording(x_values, y_values, start, stop):
     return x, y
 
 
-
 # calculate angles from binaural cues
-
 def angle_itd(distance, time, speed=343):
     """
     Given a certain time difference, calculates the angle corresponding to the DoA
@@ -214,26 +212,26 @@ def angle_ild(distance, amplitude):
     :param amplitude: recorded interaural level difference
     :return: angle, given by formula
     """
-    return np.rad2deg(np.arcsin(0.5 * amplitude / distance))
+    return np.rad2deg(np.arcsin(2 * amplitude / distance))
 
 # defunct atm
 
-def count_peak(array):
-    """
-    Pass multichannel audiofile dataset through and return array of spikes
-    indicating which channel produced the highest intensity at given sample.
-
-    :param array: a NxM array of N channels and M samples giving audio intensity
-    :return: spike_numbers, a NxM array of N channels and M samples giving
-    boolean value for spike
-    """
-    spike_numbers = np.zeros([len(array), len(array.transpose())])
-
-    # send a signal each time one microphone detects the louder audio
-    for i in range(len(array.transpose())):  # 'i' is the interval of each timestep
-        peak = np.max(array.transpose()[i])
-        for j in range(len(array)):  # 'j' is the channel source
-            if array[j][i] == peak:
-                spike_numbers[j][i] = 1
-
-    return spike_numbers
+# def count_peak(array):
+#     """
+#     Pass multichannel audiofile dataset through and return array of spikes
+#     indicating which channel produced the highest intensity at given sample.
+#
+#     :param array: a NxM array of N channels and M samples giving audio intensity
+#     :return: spike_numbers, a NxM array of N channels and M samples giving
+#     boolean value for spike
+#     """
+#     spike_numbers = np.zeros([len(array), len(array.transpose())])
+#
+#     # send a signal each time one microphone detects the louder audio
+#     for i in range(len(array.transpose())):  # 'i' is the interval of each timestep
+#         peak = np.max(array.transpose()[i])
+#         for j in range(len(array)):  # 'j' is the channel source
+#             if array[j][i] == peak:
+#                 spike_numbers[j][i] = 1
+#
+#     return spike_numbers
