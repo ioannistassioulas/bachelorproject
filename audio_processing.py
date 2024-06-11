@@ -44,7 +44,7 @@ def filter_waves(sig, band ="lowpass"):
     """
     wc = 0.5
     if band == "bandpass":
-        wc = [0.1, 0.5]
+        wc = [0.4, 0.5]
     sos = signal.butter(10, wc, btype=band, output='sos')
 
     left = sig[0]

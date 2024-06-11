@@ -3,8 +3,8 @@ from audio_processing import *
 
 # create sound waves
 
-frequency = np.linspace(250, 10000, 40)
-angles = np.linspace(0, 90, 19)
+frequency = np.linspace(500, 10000, 20)
+angles = np.linspace(0, 90, 91)
 sr = 48000
 distance = 0.3
 
@@ -12,7 +12,7 @@ distance = 0.3
 time_difference = np.zeros([len(angles), len(frequency)])
 level_difference = np.zeros([len(angles), len(frequency)])
 
-# see about about counter
+# see above about counter
 k = 1
 
 # go through all angles and frequencies again and apply tests
