@@ -34,7 +34,7 @@ def generate_test_waves(angle, frequency, sr, time, distance):
 
 
 # filtering of real data sound waves
-def filter_waves(sig, band ="lowpass"):
+def filter_waves(sig, band="lowpass"):
     """
     Apply butterworth digital signal filter on soundwaves
     :param sig: audio file to be filtered
@@ -42,13 +42,10 @@ def filter_waves(sig, band ="lowpass"):
     :param band: default low-pass, but can change to high-pass 'hp' or bandpass 'bp'
     :return:
     """
-    wc = 0.5
-    if band == "bandpass":
-        wc = [0.4, 0.5]
-    sos = signal.butter(10, wc, btype=band, output='sos')
+    sos = signal.butter(10, [500, 1000], fs=48000, btype=band, output='sos')
 
     left = sig[0]
-    right = sig[2]
+    right = sig[1]
 
     filtered_left = signal.sosfilt(sos, left)
     filtered_right = signal.sosfilt(sos, right)
@@ -58,13 +55,13 @@ def filter_waves(sig, band ="lowpass"):
 
 
 # count zeros and maxima
-def zero_crossing(array, sr):
+def zero_crossing(array, sr, start):
     """
     Encode spike data by writing down zero crossings
     :param array: data containing audio information of each channel
     :param sr: sampling rate used to convert index number into timeslot
-    :return: spike_data, array of timestamps where zero is crossed
-    :return: spike_values, array of intensity values where zero crossing is recorded
+    :param start: start time of the recording
+    :return spike_data, spike_values: x and y values of crossing
     """
 
     spike_data = np.zeros(len(array), dtype=object)
@@ -95,8 +92,7 @@ def peak_difference(array, sr):
     Count peaks of each wave
     :param array: array of 2 channel audio
     :param sr: sampling rate of audio
-    :return: spike_data. x values of each spike location
-    :return: spike_values, y values of each spike location
+    :return spike_data, spike_values: x and y values of each spike location
     """
     spike_data = np.zeros(len(array), dtype=object)
     spike_values = np.zeros(len(array), dtype=object)
@@ -202,7 +198,7 @@ def angle_itd(distance, time, speed=343):
     :param speed: the speed of sound, set to 343
     :return: angle, given by formula
     """
-    return np.rad2deg(np.arccos(time * speed / distance))
+    return np.arccos(time * speed / distance)
 
 
 def angle_ild(distance, amplitude):

@@ -39,11 +39,12 @@ for file in metadata_tau:  # parse through each audio split
     # start reading through specific csv file
     meta_csv = pd.read_csv(meta)
 
-    # create recording arrays to extract information from csv
+    # create recording arrays to extract information from csv (record of all sound events in file)
     start = []
     end = []
     angle = []
     distance = []
+    elevation = []
 
     for i in meta_csv.transpose():  # parse through all sound events
         sound = np.array(meta_csv.loc[i])
@@ -51,29 +52,66 @@ for file in metadata_tau:  # parse through each audio split
         # append all relevant information
         start.append(sound[1])
         end.append(sound[2])
-        angle.append(sound[3])
+        elevation.append(sound[3])
+        angle.append(sound[4])
         distance.append(sound[5])
 
     # add onto keypoints mega-array
-    file_info = [start, end, angle, distance]
+    file_info = [start, end, elevation, angle, distance]
     keypoints.append(file_info)
+
 
 # print complete message to timestamp
 print(f"Reading data done! Time elapsed = {t.time() - start_time}s")
 
 # Practice filtering out all the data
-sig = stereo[0]
-waves = audio_processing.filter_waves(stereo[0], band="bandpass")
-filtered_left = waves[0]
-filtered_right = waves[1]
+sig = [stereo[0][0], stereo[0][2]]
+timespan = [np.arange(len(np.array(sig[0]))), np.arange(len(np.array(sig[1])))]
 
-fig, ax = plt.subplots(1, 2)
-ax[0].plot(np.arange(len(sig[0])), sig[0], color="red")
+# fix all broadcasting issues
+timespan, waves = audio_processing.fix_broadcasting(timespan, sig)
+print("completed broadcasting")
+timespan, waves = audio_processing.set_recording(timespan, waves, int(keypoints[0][0][0] * sr), int(keypoints[0][1][0] * sr))
+print("complete recording set")
+
+# apply final filter and count zeros
+unfiltered = waves
+time_unfiltered = timespan
+waves = audio_processing.filter_waves(waves, band="bandpass")
+zero_x, zero_y = audio_processing.zero_crossing(waves, sr, int(keypoints[0][0][0] * sr))
+
+# add start time such that zeros and wave line up on graph
+zero_x[0] = zero_x[0] + keypoints[0][0][0]
+zero_x[1] = zero_x[1] + keypoints[0][0][0]
+
+#realign all broadcasting issues again
+zero_x, zero_y = audio_processing.fix_broadcasting(zero_x, zero_y)
+
+# plot to show effectiveness of filtering
+fig, ax = plt.subplots(3, 1)
+
+ax[0].plot(np.array(time_unfiltered) / sr, unfiltered, color="red")
 ax[0].set_title("Unfiltered sound event")
-ax[1].plot(np.arange(len(filtered_left)), filtered_left, color="blue")
-ax[1].set_title("Filtered sound event")
 
-fig.suptitle("Effect of filtering soundwaves, bandpass of [0.4, 0.5]")
+ax[1].plot(timespan[0] / sr, waves[0], color="blue")
+ax[1].scatter(zero_x[0], [0] * len(zero_x[0]), color="black", label="zero crossings")
+ax[1].set_title("Filtered sound event, left")
+
+ax[2].plot(timespan[1] / sr, waves[1], color="green")
+ax[2].scatter(zero_x[1], [0] * len(zero_x[1]), color="black", label="zero crossings")
+ax[2].set_title("Filtered sound event, right")
+
+fig.suptitle("Effect of filtering soundwaves, bandpass of [0.2, 0.25]. Split 1, Event 1")
+plt.legend()
+plt.show()
+
+# The final degrees are taken as keypoints[0][2][0] + 45 - 90 -> keypoints[0][3][0] - 45
+
+time_differences = np.abs(zero_x[1] - zero_x[0])  # experimental phase crossing
+print(f"final answer is {np.mean(time_differences)} with a standard deviation of {np.std(time_differences)}, error of {np.mean(time_differences) - np.std(time_differences) / np.mean(time_differences)}")
+plt.plot(np.arange(len(time_differences)), time_differences, color="red")
+inter_distance = 2 * np.sin(np.deg2rad(35)) * 0.042
+plt.axhline(audio_processing.angle_itd(inter_distance, np.mean(time_differences)), color="blue")
 plt.show()
 
 # create memory arrays to hold all itd and ild values
@@ -134,4 +172,16 @@ gt = []
 # print(f"zero-encoding complete! Total time elapse = {t.time() - start_time}s")
 
 # Begin looking at the spikerinos
+
+# transfer zeros into spike train
+zero_x[0] = (zero_x[0] - start) * sr  # subtract by start time such that length is consistent with timestep length
+current_f = torch.zeros(timespan)
+for j in zero_x[0]:
+    current_f[int(j)] = torch.ones(1)  # at each index of the time step you input in facilitatory array
+
+# repeating for trigger input
+zero_x[1] = (zero_x[1] - start) * sr
+current_t = torch.zeros(timespan)
+for j in zero_x[1]:
+    current_t[int(j)] = torch.ones(1)
 
