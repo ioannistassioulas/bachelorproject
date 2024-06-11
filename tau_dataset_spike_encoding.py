@@ -110,8 +110,11 @@ plt.show()
 time_differences = np.abs(zero_x[1] - zero_x[0])  # experimental phase crossing
 print(f"final answer is {np.mean(time_differences)} with a standard deviation of {np.std(time_differences)}, error of {np.mean(time_differences) - np.std(time_differences) / np.mean(time_differences)}")
 plt.plot(np.arange(len(time_differences)), time_differences, color="red")
+
 inter_distance = 2 * np.sin(np.deg2rad(35)) * 0.042
-plt.axhline(audio_processing.angle_itd(inter_distance, np.mean(time_differences)), color="blue")
+plt.title("TIme difference recorded of wave")
+plt.xlabel("zero crossing difference count")
+plt.ylabel("recorded phase difference")
 plt.show()
 
 # create memory arrays to hold all itd and ild values
@@ -174,14 +177,15 @@ gt = []
 # Begin looking at the spikerinos
 
 # transfer zeros into spike train
-zero_x[0] = (zero_x[0] - start) * sr  # subtract by start time such that length is consistent with timestep length
-current_f = torch.zeros(timespan)
+zero_x[0] = (zero_x[0] - keypoints[0][0][0]) * sr  # subtract by start time such that length is consistent with timestep length
+current_f = torch.zeros(len(timespan[0]))
 for j in zero_x[0]:
     current_f[int(j)] = torch.ones(1)  # at each index of the time step you input in facilitatory array
 
 # repeating for trigger input
-zero_x[1] = (zero_x[1] - start) * sr
-current_t = torch.zeros(timespan)
+zero_x[1] = (zero_x[1] - keypoints[0][0][0]) * sr
+current_t = torch.zeros(len(timespan[1]))
 for j in zero_x[1]:
     current_t[int(j)] = torch.ones(1)
 
+# pass spike train into tde simulator
