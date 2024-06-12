@@ -4,6 +4,9 @@ from audio_processing import *
 import neural_network_model as sn
 from neural_network_model import *
 
+import tde_model as tde
+from tde_model import *
+
 import time as t
 # start recording time
 start_time = t.time()
@@ -189,3 +192,4 @@ for j in zero_x[1]:
     current_t[int(j)] = torch.ones(1)
 
 # pass spike train into tde simulator
+
