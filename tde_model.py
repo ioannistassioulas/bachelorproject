@@ -3,6 +3,8 @@ from audio_processing import *
 
 import snntorch as sn
 from snntorch import spikegen
+
+
 def spike_fn(x):
     """
     Produces spikes as a function of membrane threshold
@@ -16,15 +18,14 @@ def spike_fn(x):
 
 def tde(tau_fac, tau_trg, tau_mem, time_step, n_time_steps, fac_in, trg_in):
     """
-
     :param tau_fac: time constant for fac input
     :param tau_trg: time constant for trig input
     :param tau_mem: time constant for membrane voltage
-    :param time_step: sampling rate of the audio file taken
-    :param n_time_steps:
-    :param fac_in:
-    :param trg_in:
-    :return: all membrane, facilitatory, trigger and spike recordings
+    :param time_step: the size of the timestep in s, ergo inverse sampling rate
+    :param n_time_steps: number of time steps to take, aka timespan
+    :param fac_in: input current for facilitatory spikes
+    :param trg_in: input current for trigger spikes
+    :return mem_rec, spk_rec, fac_rec, trg_rec: recordings of membrane, spikes, facilitatory and trigger inputs
     """
 
     # adjusting time constants for
@@ -43,6 +44,7 @@ def tde(tau_fac, tau_trg, tau_mem, time_step, n_time_steps, fac_in, trg_in):
     fac_rec = []
     trg_rec = []
 
+    # begin simulating with euler method for each timestep
     for t in range(n_time_steps):
         mthr = mem-1.0  # membrane threshold
         out = spike_fn(mthr)  # all values above threshold, return spike
@@ -57,6 +59,7 @@ def tde(tau_fac, tau_trg, tau_mem, time_step, n_time_steps, fac_in, trg_in):
         fac_rec.append(fac)
         trg_rec.append(trg)
 
+        # recursively redefine the potentials
         mem = new_mem
         fac = new_fac
         trg = new_trg
@@ -64,33 +67,33 @@ def tde(tau_fac, tau_trg, tau_mem, time_step, n_time_steps, fac_in, trg_in):
     return torch.stack(mem_rec, axis=1), torch.stack(spk_rec, axis=1), torch.stack(fac_rec, axis=1), torch.stack(trg_rec, axis=1)
 
 
-sr = 5000
-start = 0
-end = 1
-timestep = sr * (end - start)
-left, right = ap.generate_test_waves(30, 500, sr, 1)
-
-
-# generate spikes with zero crossings
-itd_x, itd_y = ap.zero_crossing([left, right], sr)
-itd_x, itd_y = ap.fix_broadcasting(itd_x, itd_y)
-
-# itd_x, itd_y = ap.set_recording(itd_x, itd_y, start, end)
-plt.plot(np.arange(timestep), left, color="red")
-plt.plot(np.arange(timestep), right, color="blue")
-plt.scatter(itd_x[0] * sr, itd_y[0], color='red')
-plt.scatter(itd_x[1] * sr, itd_y[1], color="blue")
-fac_in = torch.Tensor((itd_x[0] - start) * sr)
-trg_in = torch.Tensor((itd_x[1] - start) * sr)
-
-# create array of timesteps to send spikes and create spike train for facilitatory input
-current_f = torch.zeros(timestep)
-for j in fac_in:
-    current_f[int(j)] = torch.ones(1)  # at each index of the time step you input in facilitatory array
-
-current_t = torch.zeros(timestep)
-for j in trg_in:
-    current_t[int(j)] = torch.ones(1)
+# sr = 5000
+# start = 0
+# end = 1
+# timestep = sr * (end - start)
+# left, right = ap.generate_test_waves(30, 500, sr, 1)
+#
+#
+# # generate spikes with zero crossings
+# itd_x, itd_y = ap.zero_crossing([left, right], sr)
+# itd_x, itd_y = ap.fix_broadcasting(itd_x, itd_y)
+#
+# # itd_x, itd_y = ap.set_recording(itd_x, itd_y, start, end)
+# plt.plot(np.arange(timestep), left, color="red")
+# plt.plot(np.arange(timestep), right, color="blue")
+# plt.scatter(itd_x[0] * sr, itd_y[0], color='red')
+# plt.scatter(itd_x[1] * sr, itd_y[1], color="blue")
+# fac_in = torch.Tensor((itd_x[0] - start) * sr)
+# trg_in = torch.Tensor((itd_x[1] - start) * sr)
+#
+# # create array of timesteps to send spikes and create spike train for facilitatory input
+# current_f = torch.zeros(timestep)
+# for j in fac_in:
+#     current_f[int(j)] = torch.ones(1)  # at each index of the time step you input in facilitatory array
+#
+# current_t = torch.zeros(timestep)
+# for j in trg_in:
+#     current_t[int(j)] = torch.ones(1)
 
 
 # tau = 100000

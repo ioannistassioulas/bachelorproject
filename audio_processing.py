@@ -12,6 +12,8 @@ import matplotlib.cm as mplcm
 import matplotlib.colors as colors
 from matplotlib.pyplot import cm
 from scipy import signal
+from scipy.io import wavfile
+import scipy.io
 
 
 # generate SIM data set
@@ -27,14 +29,17 @@ def generate_test_waves(angle, frequency, sr, time, distance):
     amp_left = 1 / left.dot(left)
     amp_right = 1 / right.dot(right)
 
+    # start creating outputs
+    itd = phase
+    ild = amp_left - amp_right
     waveform_1 = amp_left * np.sin(t * frequency)  # right channel
     waveform_2 = amp_right * np.sin((t - phase) * frequency)  # left channel
 
-    return waveform_1, waveform_2
+    return waveform_1, waveform_2, itd, ild
 
 
 # filtering of real data sound waves
-def filter_waves(sig, band="lowpass"):
+def filter_waves(sig, wc, band):
     """
     Apply butterworth digital signal filter on soundwaves
     :param sig: audio file to be filtered
@@ -42,7 +47,7 @@ def filter_waves(sig, band="lowpass"):
     :param band: default low-pass, but can change to high-pass 'hp' or bandpass 'bp'
     :return:
     """
-    sos = signal.butter(10, [500, 1000], fs=48000, btype=band, output='sos')
+    sos = signal.butter(10, wc, fs=48000, btype=band, output='sos')
 
     left = sig[0]
     right = sig[1]
@@ -55,12 +60,11 @@ def filter_waves(sig, band="lowpass"):
 
 
 # count zeros and maxima
-def zero_crossing(array, sr, start):
+def zero_crossing(array, sr):
     """
     Encode spike data by writing down zero crossings
     :param array: data containing audio information of each channel
     :param sr: sampling rate used to convert index number into timeslot
-    :param start: start time of the recording
     :return spike_data, spike_values: x and y values of crossing
     """
 

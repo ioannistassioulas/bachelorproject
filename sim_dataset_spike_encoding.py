@@ -1,27 +1,37 @@
 import audio_processing
 from audio_processing import *
+import time as t
+# start recording time
+start_time = t.time()
 
 # create sound waves
 
-frequency = np.linspace(500, 10000, 20)
+frequency = np.array([500, 2000, 5000, 12000, 16000])
 angles = np.linspace(0, 90, 91)
-sr = 48000
+sr = 8000
 distance = 0.3
 
 # create arrays to store ITD and ILD information
 time_difference = np.zeros([len(angles), len(frequency)])
 level_difference = np.zeros([len(angles), len(frequency)])
+itd_real = []
+ild_real = []
 
 # see above about counter
 k = 1
 
 # go through all angles and frequencies again and apply tests
 for i in range(len(angles)):  # by angle
+    itd_mem = []
+    ild_mem = []
     for j in range(len(frequency)):  # by frequency
         cutoff = 0
         endtime = 99
 
-        l, r = audio_processing.generate_test_waves(angles[i], frequency[j], sr, 5, distance)
+        l, r, itd, ild = audio_processing.generate_test_waves(angles[i], frequency[j], sr, 5, distance)
+        itd_mem.append(itd)
+        ild_mem.append(ild)
+
         waves = np.array([l, r])
 
         spike_data, spike_values = audio_processing.zero_crossing(waves, sr)
@@ -45,10 +55,9 @@ for i in range(len(angles)):  # by angle
         # check to make sure of progress are still working
         print(f"{k/(len(angles) * len(frequency))*100}%")
         k += 1
-
-# generate "predicted" angles via the theory
-# angle_time = audio_processing.angle_itd(distance, time_difference)
-# angle_level = audio_processing.angle_ild(distance, level_difference)
+    itd_real.append(np.mean(itd_mem))
+    ild_real.append(np.mean(ild_mem))
+print(f"Finsihed encoding! Time elapsed:{t.time() - start_time}s")
 
 # generate graphs for ITD
 fig_time = plt.figure()
@@ -58,7 +67,7 @@ color = iter(cm.rainbow(np.linspace(0, 1, len(frequency))))  # create unique col
 for m in range(len(frequency)):
     c = next(color)
     ax.scatter(angles, time_difference.transpose()[m], color=c,  label=f"angle = {frequency[m]}")
-    # ax.axhline(frequ[m], color=c)
+    ax.plot(angles, itd_real, color="black")
 
     ax.set_title("Performance of zero crossings method for angles")
     ax.set_xlabel("Angle (degrees)")
@@ -75,7 +84,7 @@ color = iter(cm.rainbow(np.linspace(0, 1, len(frequency))))  # create unique col
 for n in range(len(frequency)):
     c = next(color)
     ax.scatter(angles, level_difference.transpose()[n], color=c, label=f"Angles = {frequency[n]}")
-    # ax.axhline(angles[n], color=c)
+    ax.plot(angles, ild_real, color="black")
 
     ax.set_title("Performance of level difference for each angle")
     ax.set_xlabel("Angle Degrees")
@@ -84,4 +93,5 @@ for n in range(len(frequency)):
 plt.legend()
 plt.show()
 
+# start passinbg information into ILD
 
