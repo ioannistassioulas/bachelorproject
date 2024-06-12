@@ -93,18 +93,18 @@ for j in trg_in:
     current_t[int(j)] = torch.ones(1)
 
 
-tau = 100000
-mem, spk, fac, trg = tde(torch.tensor(tau), torch.tensor(tau), torch.tensor(tau), torch.tensor(tau), torch.tensor(timestep), current_f, current_t)
-
-time = np.arange(timestep)
-fig, ax = plt.subplots(2, 1)
-
-ax[0].plot(time, fac[0], label="facilitatory")
-ax[0].plot(time, trg[0], label="trigger")
-ax[0].legend()
-
-ax[1].plot(time, mem[0], label="membrane")
-ax[1].plot(time, spk[0], label="spike")
-ax[1].legend()
-
-plt.show()
+# tau = 100000
+# mem, spk, fac, trg = tde(torch.tensor(tau), torch.tensor(tau), torch.tensor(tau), torch.tensor(tau), torch.tensor(timestep), current_f, current_t)
+#
+# time = np.arange(timestep)
+# fig, ax = plt.subplots(2, 1)
+#
+# ax[0].plot(time, fac[0], label="facilitatory")
+# ax[0].plot(time, trg[0], label="trigger")
+# ax[0].legend()
+#
+# ax[1].plot(time, mem[0], label="membrane")
+# ax[1].plot(time, spk[0], label="spike")
+# ax[1].legend()
+#
+# plt.show()

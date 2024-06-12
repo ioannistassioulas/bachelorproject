@@ -143,7 +143,7 @@ def tde_model(start, time, facilitatory, trigger, theta_input, theta_evaluate, s
 # # post_synaptic, v, i = tde_neuron(time1, current_fac, current_trig, 1e20)
 #
 # # Final LiF neuron modeling the voltage
-# post_synaptic, i, v, spikes = tde_model(time1, current_fac, current_trig, 1e20, 2e6)
+# post_synaptic, i, v, spikes = tde_model.py(time1, current_fac, current_trig, 1e20, 2e6)
 #
 # # it works!
 # # plot out the dataset from what was created
