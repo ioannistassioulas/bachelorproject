@@ -36,9 +36,13 @@ for file in metadata_tau:  # parse through each audio event
 
     # process audio file and record to other array
     dummy, intensities = wavfile.read(audio)
+
+    # include event plots of before and after downscaling to check for information loss
+    # plt.eventplot(intensities.transpose())
     samp = int(len(intensities) * sr / dummy)
     intensities = signal.resample(intensities, samp).transpose()
-
+    # plt.eventplot(intensities)
+    # plt.show()
     # intensities, sampling_rate = librosa.load(audio, mono=False, sr=None)  # REPLACE THIS WITH SCIPY
     stereo.append(intensities)
 
@@ -87,6 +91,13 @@ print(f"Recording complete! Time elapsed = {t.time() - start_time}s")
 # apply final filter and count zeros
 unfiltered = waves
 time_unfiltered = timespan
+
+# To determine frequency band, FFT and find the strongest frequency peaks
+wave_fft = scipy.fft(waves[0])  # peaks of fft transform
+freq_fft = scipy.fft.fftfreq(timespan, 1/sr)  # frequencies to check over
+plt.plot(freq_fft, wave_fft)
+plt.show()
+frequencies = [np.max(wave_fft[0]), np.max(wave_fft[1])]
 freq_band = [500, 510]
 
 waves = audio_processing.filter_waves(waves, freq_band, "bandpass")
