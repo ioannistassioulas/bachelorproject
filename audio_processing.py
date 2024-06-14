@@ -11,9 +11,12 @@ import pandas as pd
 import matplotlib.cm as mplcm
 import matplotlib.colors as colors
 from matplotlib.pyplot import cm
+import scipy
+from scipy import fft
 from scipy import signal
-from scipy.io import wavfile
 import scipy.io
+from scipy.io import wavfile
+
 
 
 # generate SIM data set

@@ -93,10 +93,17 @@ unfiltered = waves
 time_unfiltered = timespan
 
 # To determine frequency band, FFT and find the strongest frequency peaks
-wave_fft = scipy.fft(waves[0])  # peaks of fft transform
-freq_fft = scipy.fft.fftfreq(timespan, 1/sr)  # frequencies to check over
-plt.plot(freq_fft, wave_fft)
+wave_fft = fft.fft(waves)  # peaks of fft transform
+freq_fft = fft.fftfreq(len(timespan[0]), 1/sr)  # frequencies to check over
+fig, ax = plt.subplots(1, 2)
+
+ax[0].plot(freq_fft, wave_fft[0])
+ax[1].plot(freq_fft, wave_fft[1])
+plt.xlabel("frequency")
+plt.ylabel("Fourier transform of wave")
+fig.suptitle("Frequency spectrum of wave")
 plt.show()
+
 frequencies = [np.max(wave_fft[0]), np.max(wave_fft[1])]
 freq_band = [500, 510]
 
@@ -161,7 +168,7 @@ timer = int(np.abs(keypoints[0][1][0] - keypoints[0][0][0]) * sr)
 mem, spk, fac, trg = tde(torch.tensor(tau), torch.tensor(tau), torch.tensor(tau), torch.tensor(1/sr), torch.tensor(timer - 1), current_f, current_t)
 
 # plot spiking behaviour of first part
-fig, ax = plt.subplots(1, 2)
+fig, ax = plt.subplots(2, 1)
 ax[0].plot(np.arange(timer - 1), fac[0], label="facilitatory")
 ax[0].plot(np.arange(timer - 1), trg[0], label="trigger")
 ax[0].legend()
