@@ -36,9 +36,13 @@ for file in metadata_tau:  # parse through each audio event
 
     # process audio file and record to other array
     dummy, intensities = wavfile.read(audio)
+
+    # include event plots of before and after downscaling to check for information loss
+    # plt.eventplot(intensities.transpose())
     samp = int(len(intensities) * sr / dummy)
     intensities = signal.resample(intensities, samp).transpose()
-
+    # plt.eventplot(intensities)
+    # plt.show()
     # intensities, sampling_rate = librosa.load(audio, mono=False, sr=None)  # REPLACE THIS WITH SCIPY
     stereo.append(intensities)
 
@@ -87,6 +91,20 @@ print(f"Recording complete! Time elapsed = {t.time() - start_time}s")
 # apply final filter and count zeros
 unfiltered = waves
 time_unfiltered = timespan
+
+# To determine frequency band, FFT and find the strongest frequency peaks
+wave_fft = fft.fft(waves)  # peaks of fft transform
+freq_fft = fft.fftfreq(len(timespan[0]), 1/sr)  # frequencies to check over
+fig, ax = plt.subplots(1, 2)
+
+ax[0].plot(freq_fft, wave_fft[0])
+ax[1].plot(freq_fft, wave_fft[1])
+plt.xlabel("frequency")
+plt.ylabel("Fourier transform of wave")
+fig.suptitle("Frequency spectrum of wave")
+plt.show()
+
+frequencies = [np.max(wave_fft[0]), np.max(wave_fft[1])]
 freq_band = [500, 510]
 
 waves = audio_processing.filter_waves(waves, freq_band, "bandpass")
@@ -150,7 +168,7 @@ timer = int(np.abs(keypoints[0][1][0] - keypoints[0][0][0]) * sr)
 mem, spk, fac, trg = tde(torch.tensor(tau), torch.tensor(tau), torch.tensor(tau), torch.tensor(1/sr), torch.tensor(timer - 1), current_f, current_t)
 
 # plot spiking behaviour of first part
-fig, ax = plt.subplots(1, 2)
+fig, ax = plt.subplots(2, 1)
 ax[0].plot(np.arange(timer - 1), fac[0], label="facilitatory")
 ax[0].plot(np.arange(timer - 1), trg[0], label="trigger")
 ax[0].legend()
