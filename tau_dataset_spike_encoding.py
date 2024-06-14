@@ -95,17 +95,27 @@ time_unfiltered = timespan
 # To determine frequency band, FFT and find the strongest frequency peaks
 wave_fft = fft.fft(waves)  # peaks of fft transform
 freq_fft = fft.fftfreq(len(timespan[0]), 1/sr)  # frequencies to check over
-fig, ax = plt.subplots(1, 2)
 
-ax[0].plot(freq_fft, wave_fft[0])
-ax[1].plot(freq_fft, wave_fft[1])
-plt.xlabel("frequency")
-plt.ylabel("Fourier transform of wave")
-fig.suptitle("Frequency spectrum of wave")
+
+l_max = np.max(wave_fft[0])
+r_max = np.max(wave_fft[1])
+main_freq_l = np.abs(freq_fft[wave_fft[0].argmax()])  # main frequency
+main_freq_r = np.abs(freq_fft[wave_fft[1].argmax()])  # main frequency
+
+fig, ax = plt.subplots(1, 2, sharex=True, sharey=True)
+ax[0].plot(freq_fft, wave_fft[0], color="black")
+ax[0].scatter(main_freq_l, l_max, color="red",  label=f"Primary Frequency = {main_freq_l}")
+ax[1].plot(freq_fft, wave_fft[1], color="black")
+ax[1].scatter(main_freq_r, r_max, color="red", label=f"Primary Frequency = {main_freq_r}")
+fig.text(0.5, 0.04, 'Frequency', ha='center')
+fig.text(0.04, 0.5, 'Fourier transform of wave', va='center', rotation='vertical')
+fig.suptitle("Frequency spectrum of wave obtained via FFT")
+ax[0].legend()
+ax[1].legend()
 plt.show()
 
-frequencies = [np.max(wave_fft[0]), np.max(wave_fft[1])]
-freq_band = [500, 510]
+avg_freq = int(np.mean([main_freq_l, main_freq_r]))
+freq_band = [avg_freq - 5, avg_freq + 5]
 
 waves = audio_processing.filter_waves(waves, freq_band, "bandpass")
 print(f"Filtering complete! Time elapsed = {t.time() - start_time}s")
@@ -142,7 +152,8 @@ print(f"First graph complete! Time elapsed = {t.time() - start_time}s")
 time_differences = np.abs(zero_x[1] - zero_x[0])  # experimental phase crossing
 inter_distance = 2 * np.sin(np.deg2rad(35)) * 0.042
 plt.plot(np.arange(len(time_differences)), time_differences, color="red", label="experimental")
-plt.title("ITD")
+plt.title(f"ITD, calculated angle = {np.rad2deg(stats.mode(ap.angle_itd(inter_distance, time_differences))[0])}")
+plt.text(.5, .05, f"{keypoints[0][3][0]}", ha='center')
 plt.xlabel("Time")
 plt.ylabel("recorded phase difference")
 plt.legend()
@@ -181,3 +192,15 @@ ax[1].set_title("Membrane and Spiking behaviour")
 
 fig.suptitle("Spiking behaviour for Split 1, Event 1")
 plt.show()
+
+# print(spk[0])
+# print(torch.unique_consecutive(spk[0]))
+print(f"original spike train:{len(spk[0])}")
+print(f"unique groups: {len(torch.unique_consecutive(spk[0]))}")
+
+spk_grp_count = len(torch.unique_consecutive(spk[0])) / 2
+print(f"spike groups: {spk_grp_count}")
+spike_count = torch.sum(spk[0])
+print(f"spike count:{spike_count}")
+avg_spk_count = spike_count / spk_grp_count
+print(avg_spk_count)
