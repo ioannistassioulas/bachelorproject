@@ -52,6 +52,24 @@ for i in range(len(angles)):  # by angle
         level_differences = np.abs(spike_y[1] - spike_y[0])
         level_difference[i][j] = np.mean(level_differences)
 
+        # start making spikes
+        # transfer zeros into spike train
+        spike_data[0] = (spike_data[
+                             0] - cutoff) * sr  # subtract by start time such that length is consistent with timestep length
+        current_f = torch.zeros(len(5 * sr))
+        for l in spike_data[0]:
+            current_f[int(l)] = torch.ones(1)  # at each index of the time step you input in facilitatory array
+
+        # repeating for trigger input
+        spike_data[1] = (spike_data[1] - cutoff) * sr
+        current_t = torch.zeros(len(5 * sr))
+        for l in spike_data[1]:
+            current_t[int(l)] = torch.ones(1)
+
+        # pass everything into tde
+        tau = torch.tensor(0.001)
+        mem, spk, fac, trg = tde(tau, tau, tau, torch.tensor(1/sr), torch.tensor(5 * sr), current_f, current_t)
+
         # check to make sure of progress are still working
         print(f"{k/(len(angles) * len(frequency))*100}%")
         k += 1
@@ -93,5 +111,4 @@ for n in range(len(frequency)):
 plt.legend()
 plt.show()
 
-# start passinbg information into ILD
 

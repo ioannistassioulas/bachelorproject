@@ -4,9 +4,6 @@ from audio_processing import *
 import neural_network_model as sn
 from neural_network_model import *
 
-import tde_model as tde
-from tde_model import *
-
 import time as t
 # start recording time
 start_time = t.time()
@@ -147,12 +144,12 @@ plt.legend()
 plt.show()
 
 print(f"First graph complete! Time elapsed = {t.time() - start_time}s")
-# The final degrees are taken as keypoints[0][2][0] + 45 - 90 -> keypoints[0][3][0] - 45
+# The final degrees are taken as (90 - keypoints[0][2][0]) - 45
 
 time_differences = np.abs(zero_x[1] - zero_x[0])  # experimental phase crossing
 inter_distance = 2 * np.sin(np.deg2rad(35)) * 0.042
-plt.plot(np.arange(len(time_differences)), time_differences, color="red", label="experimental")
-plt.title(f"ITD, calculated angle = {np.rad2deg(stats.mode(ap.angle_itd(inter_distance, time_differences))[0])}")
+plt.plot(np.arange(len(time_differences)), time_differences, color="red", label=f"expected {(90-keypoints[0][2][0])-45}")
+plt.title(f"ITD, calculated angle = {np.rad2deg(stats.mode(ap.angle_itd(inter_distance, time_differences)))}")
 plt.text(.5, .05, f"{keypoints[0][3][0]}", ha='center')
 plt.xlabel("Time")
 plt.ylabel("recorded phase difference")
