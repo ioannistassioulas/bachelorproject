@@ -5,6 +5,7 @@ import neural_network_model as sn
 from neural_network_model import *
 
 import time as t
+
 # start recording time
 start_time = t.time()
 
@@ -65,140 +66,167 @@ for file in metadata_tau:  # parse through each audio event
 
     # add onto keypoints mega-array
     file_info = [start, end, elevation, angle, distance]
-    keypoints.append(file_info)
-
+    keypoints.append(np.array(file_info).transpose())
 
 # print complete message to timestamp
 print(f"Reading data done! Time elapsed = {t.time() - start_time}s")
 
 # START LOOPING THROUGH FILES AND EVENTS
 
-# for i in range(len(metadata_tau)):  # start looking at each .wav file
+spk_number = []
+for i in range(len(metadata_tau)):  # start looking at each .wav file
+    print(len(keypoints[i]))  # go through all soundevents
+    for j in range(len(keypoints[i])):
+        start = keypoints[i][j][0]
+        end = keypoints[i][j][1]
+        elevation = keypoints[i][j][2]
+        angle = keypoints[i][j][3]
+        distance = keypoints[i][j][4]
 
-# Practice filtering out all the data
-sig = [stereo[0][0], stereo[0][2]]
-timespan = [np.arange(len(np.array(sig[0]))), np.arange(len(np.array(sig[1])))]
+        # Practice filtering out all the data
+        sig = [stereo[i][0], stereo[i][2]]
+        timespan = [np.arange(len(np.array(sig[0]))), np.arange(len(np.array(sig[1])))]
 
-# fix all broadcasting issues
-timespan, waves = audio_processing.fix_broadcasting(timespan, sig)
-print(f"Broadcasting complete! Time elapsed = {t.time() - start_time}s")
-timespan, waves = audio_processing.set_recording(timespan, waves, int(keypoints[0][0][0] * sr), int(keypoints[0][1][0] * sr))
-print(f"Recording complete! Time elapsed = {t.time() - start_time}s")
+        # look at events
+        timespan, waves = audio_processing.fix_broadcasting(timespan, sig)
+        print(f"Broadcasting complete! Time elapsed = {t.time() - start_time}s")
+        timespan, waves = audio_processing.set_recording(timespan, waves, int(start * sr),
+                                                         int(end * sr))
+        print(f"Recording complete! Time elapsed = {t.time() - start_time}s")
 
-# apply final filter and count zeros
-unfiltered = waves
-time_unfiltered = timespan
+        # start filtering sound waves
+        unfiltered = waves
+        time_unfiltered = timespan
 
-# To determine frequency band, FFT and find the strongest frequency peaks
-wave_fft = fft.fft(waves)  # peaks of fft transform
-freq_fft = fft.fftfreq(len(timespan[0]), 1/sr)  # frequencies to check over
+        # To determine frequency band, FFT and find the strongest frequency peaks
+        wave_fft = fft.fft(waves)  # peaks of fft transform
+        freq_fft = fft.fftfreq(len(timespan[0]), 1 / sr)  # frequencies to check over
 
+        l_max = np.max(wave_fft[0])
+        r_max = np.max(wave_fft[1])
+        main_freq_l = np.abs(freq_fft[wave_fft[0].argmax()])  # main frequency
+        main_freq_r = np.abs(freq_fft[wave_fft[1].argmax()])  # main frequency
 
-l_max = np.max(wave_fft[0])
-r_max = np.max(wave_fft[1])
-main_freq_l = np.abs(freq_fft[wave_fft[0].argmax()])  # main frequency
-main_freq_r = np.abs(freq_fft[wave_fft[1].argmax()])  # main frequency
+        # plot out the frequencies you need
+        fig, ax = plt.subplots(1, 2, sharex=True, sharey=True)
+        ax[0].plot(freq_fft, wave_fft[0], color="black")
+        ax[0].scatter(main_freq_l, l_max, color="red", label=f"Primary Frequency = {main_freq_l}")
+        ax[1].plot(freq_fft, wave_fft[1], color="black")
+        ax[1].scatter(main_freq_r, r_max, color="red", label=f"Primary Frequency = {main_freq_r}")
+        fig.text(0.5, 0.04, 'Frequency', ha='center')
+        fig.text(0.04, 0.5, 'Fourier transform of wave', va='center', rotation='vertical')
+        fig.suptitle("Frequency spectrum of wave obtained via FFT")
+        ax[0].legend()
+        ax[1].legend()
+        plt.show()
 
-fig, ax = plt.subplots(1, 2, sharex=True, sharey=True)
-ax[0].plot(freq_fft, wave_fft[0], color="black")
-ax[0].scatter(main_freq_l, l_max, color="red",  label=f"Primary Frequency = {main_freq_l}")
-ax[1].plot(freq_fft, wave_fft[1], color="black")
-ax[1].scatter(main_freq_r, r_max, color="red", label=f"Primary Frequency = {main_freq_r}")
-fig.text(0.5, 0.04, 'Frequency', ha='center')
-fig.text(0.04, 0.5, 'Fourier transform of wave', va='center', rotation='vertical')
-fig.suptitle("Frequency spectrum of wave obtained via FFT")
-ax[0].legend()
-ax[1].legend()
-plt.show()
+        avg_freq = int(np.mean([main_freq_l, main_freq_r]))
+        freq_band = [avg_freq - 5, avg_freq + 5]
 
-avg_freq = int(np.mean([main_freq_l, main_freq_r]))
-freq_band = [avg_freq - 5, avg_freq + 5]
+        waves = audio_processing.filter_waves(waves, freq_band, "bandpass")
+        print(f"Filtering complete! Time elapsed = {t.time() - start_time}s")
 
-waves = audio_processing.filter_waves(waves, freq_band, "bandpass")
-print(f"Filtering complete! Time elapsed = {t.time() - start_time}s")
+        # sanity check to make sure waves still look good
+        wave_fft = fft.fft(waves)  # peaks of fft transform
+        freq_fft = fft.fftfreq(len(timespan[0]), 1 / sr)  # frequencies to check over
 
-zero_x, zero_y = audio_processing.zero_crossing(waves, sr)
-print(f"Zero crossing complete! Time elapsed = {t.time() - start_time}s")
+        l_max = np.max(wave_fft[0])
+        r_max = np.max(wave_fft[1])
+        main_freq_l = np.abs(freq_fft[wave_fft[0].argmax()])  # main frequency
+        main_freq_r = np.abs(freq_fft[wave_fft[1].argmax()])  # main frequency
 
-# add start time such that zeros and wave line up on graph
-zero_x[0] = zero_x[0] + keypoints[0][0][0]
-zero_x[1] = zero_x[1] + keypoints[0][0][0]
+        fig, ax = plt.subplots(1, 2, sharex=True, sharey=True)
+        ax[0].plot(freq_fft, wave_fft[0], color="black")
+        ax[0].scatter(main_freq_l, l_max, color="red", label=f"Primary Frequency = {main_freq_l}")
+        ax[1].plot(freq_fft, wave_fft[1], color="black")
+        ax[1].scatter(main_freq_r, r_max, color="red", label=f"Primary Frequency = {main_freq_r}")
+        fig.text(0.5, 0.04, 'Frequency', ha='center')
+        fig.text(0.04, 0.5, 'Fourier transform of wave', va='center', rotation='vertical')
+        fig.suptitle("Frequency spectrum of wave obtained via FFT")
+        ax[0].legend()
+        ax[1].legend()
+        plt.show()
 
-# realign all broadcasting issues again
-zero_x, zero_y = audio_processing.fix_broadcasting(zero_x, zero_y)
+        # calculate all zero crossings
+        zero_x, zero_y = audio_processing.zero_crossing(waves, sr)
+        zero_x[0] = zero_x[0] + start  # fix problems with zeros and linmes crossing on the bar
+        zero_x[1] = zero_x[1] + start
+        zero_x, zero_y = audio_processing.fix_broadcasting(zero_x, zero_y)
+        print(f"Zero crossing complete! Time elapsed = {t.time() - start_time}s")
 
-# plot to show effectiveness of filtering
-fig, ax = plt.subplots(2, 1)
+        # plot to show effectiveness of filtering
+        fig, ax = plt.subplots(2, 1)
 
-ax[0].plot(np.array(time_unfiltered) / sr, unfiltered, color="red")
-ax[0].set_title("Unfiltered sound event")
+        ax[0].plot(np.array(time_unfiltered) / sr, unfiltered, color="red")
+        ax[0].set_title("Unfiltered sound event")
 
-ax[1].plot(timespan[0] / sr, waves[0], color="blue", label="left")
-ax[1].scatter(zero_x[0], [0] * len(zero_x[0]), color="black", label="zero crossings")
-ax[1].plot(timespan[1] / sr, waves[1], color="green", label="right")
-ax[1].scatter(zero_x[1], [0] * len(zero_x[1]), color="grey", label="zero crossings")
-ax[1].set_title("Filtered sound event")
+        ax[1].plot(timespan[0] / sr, waves[0], color="blue", label="left")
+        ax[1].scatter(zero_x[0], [0] * len(zero_x[0]), color="black", label="zero crossings")
+        ax[1].plot(timespan[1] / sr, waves[1], color="green", label="right")
+        ax[1].scatter(zero_x[1], [0] * len(zero_x[1]), color="grey", label="zero crossings")
+        ax[1].set_title("Filtered sound event")
 
-fig.suptitle(f"Effect of filtering soundwaves, bandpass of {freq_band} Hz. Split 1, Event 1")
-plt.legend()
-plt.show()
+        fig.suptitle(f"Effect of filtering soundwaves, bandpass of {freq_band} Hz. Split 1, Event 1")
+        plt.legend()
+        plt.show()
 
-print(f"First graph complete! Time elapsed = {t.time() - start_time}s")
-# The final degrees are taken as (90 - keypoints[0][2][0]) - 45
+        print(f"First graph complete! Time elapsed = {t.time() - start_time}s")
 
-time_differences = np.abs(zero_x[1] - zero_x[0])  # experimental phase crossing
-inter_distance = 2 * np.sin(np.deg2rad(35)) * 0.042
-plt.plot(np.arange(len(time_differences)), time_differences, color="red", label=f"expected {(90-keypoints[0][2][0])-45}")
-plt.title(f"ITD, calculated angle = {np.rad2deg(stats.mode(ap.angle_itd(inter_distance, time_differences))[0])}")
+        time_differences = np.abs(zero_x[1] - zero_x[0])  # experimental phase crossing
+        inter_distance = 2 * np.sin(np.deg2rad(35)) * 0.042
+        plt.plot(np.arange(len(time_differences)), time_differences, color="red",
+                 label=f"expected {(45 - angle)}")  # The final degrees are taken as (90 - keypoints[0][2][0]) - 45
+        plt.title(f"ITD, calculated angle = {np.rad2deg(stats.mode(ap.angle_itd(inter_distance, time_differences))[0])}")
 
-plt.xlabel("Time")
-plt.ylabel("recorded phase difference")
-plt.legend()
-plt.show()
+        plt.xlabel("Time")
+        plt.ylabel("recorded phase difference")
+        plt.legend()
+        plt.show()
+        print(f"Completed angle calculation! Time elapsed = {t.time() - start_time}s")
 
-print(f"Completed angle calculation! Time elapsed = {t.time() - start_time}s")
+        # transfer zeros into spike train
+        zero_x[0] = (zero_x[0] - start) * sr  # subtract by start time such that length is consistent with timestep length
+        current_f = torch.zeros(len(timespan[0]))
+        for j in zero_x[0]:
+            current_f[int(j)] = torch.ones(1)  # at each index of the time step you input in facilitatory array
 
-# transfer zeros into spike train
-zero_x[0] = (zero_x[0] - keypoints[0][0][0]) * sr  # subtract by start time such that length is consistent with timestep length
-current_f = torch.zeros(len(timespan[0]))
-for j in zero_x[0]:
-    current_f[int(j)] = torch.ones(1)  # at each index of the time step you input in facilitatory array
+        # repeating for trigger input
+        zero_x[1] = (zero_x[1] - start) * sr
+        current_t = torch.zeros(len(timespan[1]))
+        for j in zero_x[1]:
+            current_t[int(j)] = torch.ones(1)
 
-# repeating for trigger input
-zero_x[1] = (zero_x[1] - keypoints[0][0][0]) * sr
-current_t = torch.zeros(len(timespan[1]))
-for j in zero_x[1]:
-    current_t[int(j)] = torch.ones(1)
+        # pass spike train into tde simulator
 
-# pass spike train into tde simulator
-tau = 0.001
-timer = int(np.abs(keypoints[0][1][0] - keypoints[0][0][0]) * sr)
+        tau_tde = torch.tensor(0.001)
+        tau_mem = torch.tensor(0.005)
+        timer = int((end - start) * sr)
 
-mem, spk, fac, trg = tde(torch.tensor(tau), torch.tensor(tau), torch.tensor(tau), torch.tensor(1/sr), torch.tensor(timer - 1), current_f, current_t)
+        mem, spk, fac, trg = tde(tau_tde, tau_tde, tau_mem, torch.tensor(1/sr), torch.tensor(timer - 1), current_f, current_t)
 
-# plot spiking behaviour of first part
-fig, ax = plt.subplots(2, 1)
-ax[0].plot(np.arange(timer - 1), fac[0], label="facilitatory")
-ax[0].plot(np.arange(timer - 1), trg[0], label="trigger")
-ax[0].legend()
-ax[0].set_title("TDE recording portion")
+        # plot spiking behaviour of first part
+        fig, ax = plt.subplots(2, 1)
+        ax[0].plot(np.arange(timer - 1), fac[0], label="facilitatory")
+        ax[0].plot(np.arange(timer - 1), trg[0], label="trigger")
+        ax[0].legend()
+        ax[0].set_title("TDE recording portion")
 
-ax[1].plot(np.arange(timer - 1), mem[0], label="membrane")
-ax[1].plot(np.arange(timer - 1), spk[0], label="spike")
-ax[1].legend()
-ax[1].set_title("Membrane and Spiking behaviour")
+        ax[1].plot(np.arange(timer - 1), mem[0], label="membrane")
+        ax[1].plot(np.arange(timer - 1), spk[0], label="spike")
+        ax[1].legend()
+        ax[1].set_title("Membrane and Spiking behaviour")
 
-fig.suptitle("Spiking behaviour for Split 1, Event 1")
-plt.show()
+        fig.suptitle("Spiking behaviour for Split 1, Event 1")
+        plt.show()
 
-# print(spk[0])
-# print(torch.unique_consecutive(spk[0]))
-print(f"original spike train:{len(spk[0])}")
-print(f"unique groups: {len(torch.unique_consecutive(spk[0]))}")
+        # start counting all spikes
+        spk_grp_count = len(torch.unique_consecutive(spk[0])) / 2
+        spike_count = torch.sum(spk[0])
+        avg_spk_count = spike_count / spk_grp_count
 
-spk_grp_count = len(torch.unique_consecutive(spk[0])) / 2
-print(f"spike groups: {spk_grp_count}")
-spike_count = torch.sum(spk[0])
-print(f"spike count:{spike_count}")
-avg_spk_count = spike_count / spk_grp_count
-print(avg_spk_count)
+        # add spike count to final counter alongside the required angle
+        angle = 45 - angle
+        results = [spike_count, angle, elevation, distance, i+1, j+1]
+        spk_number.append(results)
+
+    # complete! onto the next sound event

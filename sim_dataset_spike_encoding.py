@@ -87,6 +87,7 @@ for i in range(len(angles)):  # by angle
         #
         # fig.suptitle(f"Spiking behaviour for SIM: frequency={frequency[j]}, angle={angles[i]}")
         # plt.show()
+
         # check to make sure of progress are still working
         print(f"{k/(len(angles) * len(frequency))*100}% Time elapse = {t.time() - start_time}s")
         k += 1
