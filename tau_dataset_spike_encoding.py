@@ -22,7 +22,7 @@ print(f"Acquiring sound files done! Time elapsed = {t.time() - start_time}s")
 # setup of array : [audio file, sound_event, metadata of event]
 keypoints = []
 stereo = []
-sr = 10000
+sr = 20000
 
 # start parsing through csv file and saving information
 for file in metadata_tau:  # parse through each audio event
@@ -149,12 +149,13 @@ print(f"First graph complete! Time elapsed = {t.time() - start_time}s")
 time_differences = np.abs(zero_x[1] - zero_x[0])  # experimental phase crossing
 inter_distance = 2 * np.sin(np.deg2rad(35)) * 0.042
 plt.plot(np.arange(len(time_differences)), time_differences, color="red", label=f"expected {(90-keypoints[0][2][0])-45}")
-plt.title(f"ITD, calculated angle = {np.rad2deg(stats.mode(ap.angle_itd(inter_distance, time_differences)))}")
-plt.text(.5, .05, f"{keypoints[0][3][0]}", ha='center')
+plt.title(f"ITD, calculated angle = {np.rad2deg(stats.mode(ap.angle_itd(inter_distance, time_differences))[0])}")
+
 plt.xlabel("Time")
 plt.ylabel("recorded phase difference")
 plt.legend()
 plt.show()
+
 print(f"Completed angle calculation! Time elapsed = {t.time() - start_time}s")
 
 # transfer zeros into spike train

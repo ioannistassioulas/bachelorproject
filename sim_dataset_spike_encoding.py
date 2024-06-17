@@ -161,33 +161,6 @@ fig_time = plt.figure()
 ax = fig_time.add_subplot(111)
 color = iter(cm.rainbow(np.linspace(0, 1, len(frequency))))  # create unique colors for each plot
 
-# for m in range(len(frequency)):
-#     c = next(color)
-#     ax.scatter(angles, time_difference.transpose()[m], color=c,  label=f"angle = {frequency[m]}")
-#     ax.plot(angles, itd_real, color="black")
-#
-#     ax.set_title("Performance of zero crossings method for angles")
-#     ax.set_xlabel("Angle (degrees)")
-#     ax.set_ylabel("ITD")
-#
-# plt.legend()
-# plt.show()
-#
-# # likewise for ILD
-# fig_level = plt.figure()
-# ax = fig_level.add_subplot(111)
-# color = iter(cm.rainbow(np.linspace(0, 1, len(frequency))))  # create unique colors for each plot
-#
-# for n in range(len(frequency)):
-#     c = next(color)
-#     ax.scatter(angles, level_difference.transpose()[n], color=c, label=f"Angles = {frequency[n]}")
-#     ax.plot(angles, ild_real, color="black")
-#
-#     ax.set_title("Performance of level difference for each angle")
-#     ax.set_xlabel("Angle Degrees")
-#     ax.set_ylabel("ILD")
-#
-# plt.legend()
-# plt.show()
+
 
 
