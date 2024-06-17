@@ -1,8 +1,7 @@
 import audio_processing as ap
 from audio_processing import *
 
-import snntorch as sn
-from snntorch import spikegen
+import torch
 
 
 def spike_fn(x):
@@ -12,7 +11,7 @@ def spike_fn(x):
     :return: out, where returns 1 if membrane - threshold is still positive, and 0 if less
     """
     out = torch.zeros_like(x)
-    out = torch.where(x > 0, 1.0, out)
+    out = torch.where(x > 0, torch.tensor(1.0), out)
     return out
 
 
@@ -28,7 +27,7 @@ def tde(tau_fac, tau_trg, tau_mem, time_step, n_time_steps, fac_in, trg_in):
     :return mem_rec, spk_rec, fac_rec, trg_rec: recordings of membrane, spikes, facilitatory and trigger inputs
     """
 
-    # adjusting time constants for
+    # diff equation to solve for the fac, trg and mem, respectively
     alpha   = torch.exp(-time_step/tau_fac)
     beta    = torch.exp(-time_step/tau_trg)
     gamma   = torch.exp(-time_step/tau_mem)
@@ -49,9 +48,10 @@ def tde(tau_fac, tau_trg, tau_mem, time_step, n_time_steps, fac_in, trg_in):
         mthr = mem-1.0  # membrane threshold
         out = spike_fn(mthr)  # all values above threshold, return spike
 
-        new_fac = alpha*fac + fac_in[t]  # generate potential for facilitatory input
-        new_trg = beta*trg + new_fac*trg_in[t]  # generate potential for trigger input
-        new_mem = (gamma*mem + new_trg)*(1.0-out)  # generate potential for membrane voltage that is passed into LiF
+        # integrate value for fac, trg and mem voltage
+        new_fac = alpha*fac + fac_in[t]
+        new_trg = beta*trg + new_fac*trg_in[t]
+        new_mem = (gamma*mem + new_trg)*(1.0-out)  # if spike is true, reset to 0
 
         # save all values
         mem_rec.append(mem)
