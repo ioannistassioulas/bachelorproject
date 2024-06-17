@@ -44,7 +44,7 @@ for i in range(len(location)):
     # location = location - np.array([0, 0.0343, 0])  # adjust location for sound source
 
     # download sound files and separate into spike datafile
-    stereo, sampling_rate = librosa.load(filename[i], mono=False)
+    # stereo, sampling_rate = librosa.load(filename[i], mono=False)
     waves = [stereo[0], stereo[2]]
 
     # create data for ITD/ILD

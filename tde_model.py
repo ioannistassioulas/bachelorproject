@@ -1,8 +1,7 @@
 import audio_processing as ap
 from audio_processing import *
 
-import snntorch as sn
-from snntorch import spikegen
+import torch
 
 
 def spike_fn(x):
@@ -12,7 +11,7 @@ def spike_fn(x):
     :return: out, where returns 1 if membrane - threshold is still positive, and 0 if less
     """
     out = torch.zeros_like(x)
-    out = torch.where(x > 0, 1.0, out)
+    out = torch.where(x > 0, torch.tensor(1.0), out)
     return out
 
 
