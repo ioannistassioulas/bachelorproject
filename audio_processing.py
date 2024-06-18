@@ -9,7 +9,7 @@ from matplotlib import colors as mcolors
 import pandas as pd
 import matplotlib.cm as mplcm
 import matplotlib.colors as colors
-from matplotlib.pyplot import cm# transfer zeros into spike train
+from matplotlib.pyplot import cm # transfer zeros into spike train
 import scipy
 from scipy import fft
 from scipy import signal
@@ -19,6 +19,7 @@ from scipy import stats
 import tde_model as tde
 from tde_model import *
 import gc  # garbage collection
+
 
 # generate SIM data set
 def generate_test_waves(angle, frequency, sr, time, distance):

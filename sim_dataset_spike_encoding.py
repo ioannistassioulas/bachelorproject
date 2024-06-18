@@ -8,9 +8,9 @@ start_time = t.time()
 
 # create sound waves
 
-frequency = np.array([500, 1500, 2500, 3500, 4500, 5500])
+frequency = np.arange(500, 12501, 1000)
 angles = np.arange(0, 91, 5)
-sr = 10000
+sr = 41000
 distance = 0.048
 time = 0.1
 
