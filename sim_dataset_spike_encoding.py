@@ -69,7 +69,7 @@ for i in range(len(angles)):  # by angle
 
         # pass everything into tde
         tau_tde = torch.tensor(0.001)
-        tau_mem = torch.tensor(5)
+        tau_mem = torch.tensor(5000)
         mem, spk, fac, trg = tde(tau_tde, tau_tde, tau_mem, torch.tensor(1/sr), torch.tensor(timer), current_f, current_t)
         spike_rec.append(torch.stack((mem[0], spk[0], fac[0], trg[0])))
 
@@ -85,10 +85,8 @@ for i in range(len(angles)):  # by angle
     spike_mem.append(spike_rec)
 
 spike_mem = torch.stack(spike_mem)
-print(spike_mem.size())
 spike_mem = spike_mem.permute((1, 0, 2, 3))
-print(spike_mem.size())
-print(f"Finsihed encoding! Time elapsed:{t.time() - start_time}s")
+print(f"Finished encoding! Time elapsed:{t.time() - start_time}s")
 
 # go through each frequency and count the total number of spikes
 y = 0
@@ -103,18 +101,16 @@ for i in spike_mem:  # per frequency
         trg = j[3]
 
         total_spike_count = torch.sum(spk)
-        print(f"for {angles[z]}, total_spike_count = {total_spike_count}")
         spike_result.append(total_spike_count)
 
         z += 1
 
-    plt.plot(itd_real, spike_result, label = f"Frequency = {frequency[y]}")
-
-
+    plt.plot(itd_real, spike_result, label=f"Frequency = {frequency[y]}")
+    plt.scatter(itd_real, spike_result, label=f"Frequency = {frequency[y]}")
     y += 1
 
 plt.xlabel("$\Delta t$")
 plt.ylabel("Spike #")
-plt.title()
+plt.title("TDE performance rate")
 plt.show()
 
