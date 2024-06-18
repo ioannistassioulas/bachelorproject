@@ -18,7 +18,7 @@ from scipy.io import wavfile
 from scipy import stats
 import tde_model as tde
 from tde_model import *
-
+import gc  # garbage collection
 
 # generate SIM data set
 def generate_test_waves(angle, frequency, sr, time, distance):

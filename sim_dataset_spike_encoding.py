@@ -2,14 +2,14 @@ import audio_processing
 from audio_processing import *
 import time as t
 
-import gc  # garbage collection
+
 # start recording time
 start_time = t.time()
 
 # create sound waves
 
-frequency = np.linspace(250, 5000, 20)
-angles = np.linspace(0, 90, 10)
+frequency = np.arange(250, 3250, 250)
+angles = np.arange(1, 91, 1)
 sr = 7000
 distance = 0.3
 time = 0.1
@@ -54,22 +54,24 @@ for i in range(len(angles)):  # by angle
         # print("done!")
         # start making spikes
         # transfer zeros into spike train
+
+        timer  = int(time * sr)
         spike_data[0] = (spike_data[0]) * sr  # subtract by start time to keep length consistent with zeros
-        current_f = torch.zeros(time * sr)
+        current_f = torch.zeros(timer)
         for n in spike_data[0]:
             current_f[int(n)] = torch.ones(1)  # at each index of the time step you input in facilitatory array
 
         # repeating for trigger input
         spike_data[1] = (spike_data[1]) * sr
-        current_t = torch.zeros(time * sr)
+        current_t = torch.zeros(timer)
         for n in spike_data[1]:
             current_t[int(n)] = torch.ones(1)
 
         # pass everything into tde
         tau_tde = torch.tensor(0.001)
-        tau_mem = torch.tensor(0.005)
-        mem, spk, fac, trg = tde(tau_tde, tau_tde, tau_mem, torch.tensor(1/sr), torch.tensor(time * sr), current_f, current_t)
-        spike_rec.append([mem[0], spk[0], fac[0], trg[0]])
+        tau_mem = torch.tensor(5)
+        mem, spk, fac, trg = tde(tau_tde, tau_tde, tau_mem, torch.tensor(1/sr), torch.tensor(timer), current_f, current_t)
+        spike_rec.append(torch.stack((mem[0], spk[0], fac[0], trg[0])))
 
         # check to make sure of progress are still working
         gc.collect()
@@ -78,15 +80,22 @@ for i in range(len(angles)):  # by angle
 
     itd_real.append(np.mean(itd_mem))
     ild_real.append(np.mean(ild_mem))
+
+    spike_rec = torch.stack(spike_rec)
     spike_mem.append(spike_rec)
 
+spike_mem = torch.stack(spike_mem)
+print(spike_mem.size())
+spike_mem = spike_mem.permute((1, 0, 2, 3))
+print(spike_mem.size())
 print(f"Finsihed encoding! Time elapsed:{t.time() - start_time}s")
 
-# at the moment, the array is in angle * frequency, so transpose
-spike_mem = spike_mem.transpose()
 # go through each frequency and count the total number of spikes
+y = 0
+
 for i in spike_mem:  # per frequency
     spike_result = []
+    z = 0
     for j in i:  # per angle
         mem = j[0]
         spk = j[1]
@@ -94,11 +103,18 @@ for i in spike_mem:  # per frequency
         trg = j[3]
 
         total_spike_count = torch.sum(spk)
-        spike_result.append(torch.sum)
+        print(f"for {angles[z]}, total_spike_count = {total_spike_count}")
+        spike_result.append(total_spike_count)
 
-    plt.plot(angles, spike_result)
-    plt.xlabel("Angle")
-    plt.ylabel("Spike #")
-    plt.title("Spiking activity of TDE")
-print(np.array(spike_mem).shape)
+        z += 1
+
+    plt.plot(itd_real, spike_result, label = f"Frequency = {frequency[y]}")
+
+
+    y += 1
+
+plt.xlabel("$\Delta t$")
+plt.ylabel("Spike #")
+plt.title()
+plt.show()
 
