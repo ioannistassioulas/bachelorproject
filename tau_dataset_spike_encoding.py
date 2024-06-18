@@ -108,17 +108,17 @@ for i in range(len(metadata_tau)):  # start looking at each .wav file
         main_freq_r = np.abs(freq_fft[wave_fft[1].argmax()])  # main frequency
 
         # plot out the frequencies you need
-        fig, ax = plt.subplots(1, 2, sharex=True, sharey=True)
-        ax[0].plot(freq_fft, wave_fft[0], color="black")
-        ax[0].scatter(main_freq_l, l_max, color="red", label=f"Primary Frequency = {main_freq_l}")
-        ax[1].plot(freq_fft, wave_fft[1], color="black")
-        ax[1].scatter(main_freq_r, r_max, color="red", label=f"Primary Frequency = {main_freq_r}")
-        fig.text(0.5, 0.04, 'Frequency', ha='center')
-        fig.text(0.04, 0.5, 'Fourier transform of wave', va='center', rotation='vertical')
-        fig.suptitle("Frequency spectrum of wave obtained via FFT")
-        ax[0].legend()
-        ax[1].legend()
-        plt.show()
+        # fig, ax = plt.subplots(1, 2, sharex=True, sharey=True)
+        # ax[0].plot(freq_fft, wave_fft[0], color="black")
+        # ax[0].scatter(main_freq_l, l_max, color="red", label=f"Primary Frequency = {main_freq_l}")
+        # ax[1].plot(freq_fft, wave_fft[1], color="black")
+        # ax[1].scatter(main_freq_r, r_max, color="red", label=f"Primary Frequency = {main_freq_r}")
+        # fig.text(0.5, 0.04, 'Frequency', ha='center')
+        # fig.text(0.04, 0.5, 'Fourier transform of wave', va='center', rotation='vertical')
+        # fig.suptitle("Frequency spectrum of wave obtained via FFT")
+        # ax[0].legend()
+        # ax[1].legend()
+        # plt.show()
 
         avg_freq = int(np.mean([main_freq_l, main_freq_r]))
         freq_band = [avg_freq - 5, avg_freq + 5]
@@ -135,17 +135,17 @@ for i in range(len(metadata_tau)):  # start looking at each .wav file
         main_freq_l = np.abs(freq_fft[wave_fft[0].argmax()])  # main frequency
         main_freq_r = np.abs(freq_fft[wave_fft[1].argmax()])  # main frequency
 
-        fig, ax = plt.subplots(1, 2, sharex=True, sharey=True)
-        ax[0].plot(freq_fft, wave_fft[0], color="black")
-        ax[0].scatter(main_freq_l, l_max, color="red", label=f"Primary Frequency = {main_freq_l}")
-        ax[1].plot(freq_fft, wave_fft[1], color="black")
-        ax[1].scatter(main_freq_r, r_max, color="red", label=f"Primary Frequency = {main_freq_r}")
-        fig.text(0.5, 0.04, 'Frequency', ha='center')
-        fig.text(0.04, 0.5, 'Fourier transform of wave', va='center', rotation='vertical')
-        fig.suptitle("Frequency spectrum of wave obtained via FFT")
-        ax[0].legend()
-        ax[1].legend()
-        plt.show()
+        # fig, ax = plt.subplots(1, 2, sharex=True, sharey=True)
+        # ax[0].plot(freq_fft, wave_fft[0], color="black")
+        # ax[0].scatter(main_freq_l, l_max, color="red", label=f"Primary Frequency = {main_freq_l}")
+        # ax[1].plot(freq_fft, wave_fft[1], color="black")
+        # ax[1].scatter(main_freq_r, r_max, color="red", label=f"Primary Frequency = {main_freq_r}")
+        # fig.text(0.5, 0.04, 'Frequency', ha='center')
+        # fig.text(0.04, 0.5, 'Fourier transform of wave', va='center', rotation='vertical')
+        # fig.suptitle("Frequency spectrum of wave obtained via FFT")
+        # ax[0].legend()
+        # ax[1].legend()
+        # plt.show()
 
         # calculate all zero crossings
         zero_x, zero_y = audio_processing.zero_crossing(waves, sr)
@@ -155,20 +155,20 @@ for i in range(len(metadata_tau)):  # start looking at each .wav file
         print(f"Zero crossing complete! Time elapsed = {t.time() - start_time}s")
 
         # plot to show effectiveness of filtering
-        fig, ax = plt.subplots(2, 1)
-
-        ax[0].plot(np.array(time_unfiltered) / sr, unfiltered, color="red")
-        ax[0].set_title("Unfiltered sound event")
-
-        ax[1].plot(timespan[0] / sr, waves[0], color="blue", label="left")
-        ax[1].scatter(zero_x[0], [0] * len(zero_x[0]), color="black", label="zero crossings")
-        ax[1].plot(timespan[1] / sr, waves[1], color="green", label="right")
-        ax[1].scatter(zero_x[1], [0] * len(zero_x[1]), color="grey", label="zero crossings")
-        ax[1].set_title("Filtered sound event")
-
-        fig.suptitle(f"Effect of filtering soundwaves, bandpass of {freq_band} Hz. Split 1, Event 1")
-        plt.legend()
-        plt.show()
+        # fig, ax = plt.subplots(2, 1)
+        #
+        # ax[0].plot(np.array(time_unfiltered) / sr, unfiltered, color="red")
+        # ax[0].set_title("Unfiltered sound event")
+        #
+        # ax[1].plot(timespan[0] / sr, waves[0], color="blue", label="left")
+        # ax[1].scatter(zero_x[0], [0] * len(zero_x[0]), color="black", label="zero crossings")
+        # ax[1].plot(timespan[1] / sr, waves[1], color="green", label="right")
+        # ax[1].scatter(zero_x[1], [0] * len(zero_x[1]), color="grey", label="zero crossings")
+        # ax[1].set_title("Filtered sound event")
+        #
+        # fig.suptitle(f"Effect of filtering soundwaves, bandpass of {freq_band} Hz. Split 1, Event 1")
+        # plt.legend()
+        # plt.show()
 
         print(f"First graph complete! Time elapsed = {t.time() - start_time}s")
 
@@ -205,19 +205,19 @@ for i in range(len(metadata_tau)):  # start looking at each .wav file
         mem, spk, fac, trg = tde(tau_tde, tau_tde, tau_mem, torch.tensor(1/sr), torch.tensor(timer - 1), current_f, current_t)
 
         # plot spiking behaviour of first part
-        fig, ax = plt.subplots(2, 1)
-        ax[0].plot(np.arange(timer - 1), fac[0], label="facilitatory")
-        ax[0].plot(np.arange(timer - 1), trg[0], label="trigger")
-        ax[0].legend()
-        ax[0].set_title("TDE recording portion")
-
-        ax[1].plot(np.arange(timer - 1), mem[0], label="membrane")
-        ax[1].plot(np.arange(timer - 1), spk[0], label="spike")
-        ax[1].legend()
-        ax[1].set_title("Membrane and Spiking behaviour")
-
-        fig.suptitle("Spiking behaviour for Split 1, Event 1")
-        plt.show()
+        # fig, ax = plt.subplots(2, 1)
+        # ax[0].plot(np.arange(timer - 1), fac[0], label="facilitatory")
+        # ax[0].plot(np.arange(timer - 1), trg[0], label="trigger")
+        # ax[0].legend()
+        # ax[0].set_title("TDE recording portion")
+        #
+        # ax[1].plot(np.arange(timer - 1), mem[0], label="membrane")
+        # ax[1].plot(np.arange(timer - 1), spk[0], label="spike")
+        # ax[1].legend()
+        # ax[1].set_title("Membrane and Spiking behaviour")
+        #
+        # fig.suptitle("Spiking behaviour for Split 1, Event 1")
+        # plt.show()
 
         # start counting all spikes
         spk_grp_count = len(torch.unique_consecutive(spk[0])) / 2
@@ -229,6 +229,7 @@ for i in range(len(metadata_tau)):  # start looking at each .wav file
         results = [spike_count, angle, elevation, distance, i+1, j+1]
         spk_number.append(results)
 
+        # throw away to try and save a bit of memory
         gc.collect()
 
     # complete! onto the next sound event

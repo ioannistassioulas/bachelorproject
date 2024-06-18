@@ -8,15 +8,13 @@ start_time = t.time()
 
 # create sound waves
 
-frequency = np.arange(250, 3250, 250)
-angles = np.arange(1, 91, 1)
-sr = 7000
+frequency = np.array([500, 1500, 2500, 3500, 4500, 5500])
+angles = np.arange(0, 91, 5)
+sr = 10000
 distance = 0.3
 time = 0.1
 
 # create arrays to store ITD and ILD information
-# time_difference = np.zeros([len(angles), len(frequency)])
-# level_difference = np.zeros([len(angles), len(frequency)])
 spike_mem = []
 itd_real = []
 ild_real = []
@@ -69,9 +67,23 @@ for i in range(len(angles)):  # by angle
 
         # pass everything into tde
         tau_tde = torch.tensor(0.001)
-        tau_mem = torch.tensor(5000)
+        tau_mem = torch.tensor(1)
         mem, spk, fac, trg = tde(tau_tde, tau_tde, tau_mem, torch.tensor(1/sr), torch.tensor(timer), current_f, current_t)
         spike_rec.append(torch.stack((mem[0], spk[0], fac[0], trg[0])))
+
+        # fig, ax = plt.subplots(2, 1)
+        # ax[0].plot(np.arange(timer), fac[0], label="facilitatory")
+        # ax[0].plot(np.arange(timer), trg[0], label="trigger")
+        # ax[0].legend()
+        # ax[0].set_title("TDE recording portion")
+        #
+        # ax[1].plot(np.arange(timer), mem[0], label="membrane")
+        # ax[1].plot(np.arange(timer), spk[0], label="spike")
+        # ax[1].legend()
+        # ax[1].set_title("Membrane and Spiking behaviour")
+        #
+        # fig.suptitle(f"Spiking behaviour for frequency = {frequency[j]}, angle = {angles[i]}")
+        # plt.show()
 
         # check to make sure of progress are still working
         gc.collect()
@@ -100,17 +112,19 @@ for i in spike_mem:  # per frequency
         fac = j[2]
         trg = j[3]
 
-        total_spike_count = torch.sum(spk)
+        total_spike = torch.tensor(signal.convolve(spk, mem))
+        total_spike_count = torch.sum(total_spike)
         spike_result.append(total_spike_count)
 
         z += 1
 
     plt.plot(itd_real, spike_result, label=f"Frequency = {frequency[y]}")
-    plt.scatter(itd_real, spike_result, label=f"Frequency = {frequency[y]}")
+    plt.scatter(itd_real, spike_result)
     y += 1
 
 plt.xlabel("$\Delta t$")
 plt.ylabel("Spike #")
 plt.title("TDE performance rate")
+plt.legend()
 plt.show()
 
