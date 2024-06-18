@@ -23,8 +23,7 @@ print(f"Acquiring sound files done! Time elapsed = {t.time() - start_time}s")
 # setup of array : [audio file, sound_event, metadata of event]
 keypoints = []
 stereo = []
-sr = 24000
-
+sr = 41000
 # start parsing through csv file and saving information
 for file in metadata_tau:  # parse through each audio event
     # get names of files
