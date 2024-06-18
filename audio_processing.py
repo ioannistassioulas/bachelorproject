@@ -24,7 +24,7 @@ from tde_model import *
 def generate_test_waves(angle, frequency, sr, time, distance):
 
     phase = np.cos(np.deg2rad(angle)) * distance / 343
-    t = np.linspace(0, time, time*sr)
+    t = np.linspace(0, time, int(time*sr))
 
     radius = np.array([np.cos(angle), np.sin(angle), 0])
     left = radius + np.array([distance/2, 0, 0])
