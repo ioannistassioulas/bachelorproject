@@ -23,7 +23,7 @@ print(f"Acquiring sound files done! Time elapsed = {t.time() - start_time}s")
 # setup of array : [audio file, sound_event, metadata of event]
 keypoints = []
 stereo = []
-sr = 20000
+sr = 24000
 
 # start parsing through csv file and saving information
 for file in metadata_tau:  # parse through each audio event
@@ -36,12 +36,12 @@ for file in metadata_tau:  # parse through each audio event
     dummy, intensities = wavfile.read(audio)
 
     # include event plots of before and after downscaling to check for information loss
-    # plt.eventplot(intensities.transpose())
+    plt.eventplot(intensities[0])
     samp = int(len(intensities) * sr / dummy)
     intensities = signal.resample(intensities, samp).transpose()
-    # plt.eventplot(intensities)
-    # plt.show()
-    # intensities, sampling_rate = librosa.load(audio, mono=False, sr=None)  # REPLACE THIS WITH SCIPY
+    plt.eventplot(intensities[0])
+    plt.show()
+
     stereo.append(intensities)
 
     # start reading through specific csv file
@@ -76,7 +76,7 @@ print(f"Reading data done! Time elapsed = {t.time() - start_time}s")
 spk_number = []
 for i in range(len(metadata_tau)):  # start looking at each .wav file
     print(len(keypoints[i]))  # go through all soundevents
-    for j in range(len(keypoints[i])):
+    for j in range(1):
         start = keypoints[i][j][0]
         end = keypoints[i][j][1]
         elevation = keypoints[i][j][2]
