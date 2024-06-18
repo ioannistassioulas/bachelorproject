@@ -1,6 +1,8 @@
 import audio_processing
 from audio_processing import *
 import time as t
+
+import gc  # garbage collection
 # start recording time
 start_time = t.time()
 
@@ -70,7 +72,8 @@ for i in range(len(angles)):  # by angle
         spike_rec.append([mem[0], spk[0], fac[0], trg[0]])
 
         # check to make sure of progress are still working
-        print(f"{k/(len(angles) * len(frequency))*100}% Time elapse = {t.time() - start_time}s")
+        gc.collect()
+        print(f"{k/(len(angles) * len(frequency))*100}% Time elapse = {t.time() - start_time}s \n Angle = {angles[i]} \n Frequency = {frequency[j]}")
         k += 1
 
     itd_real.append(np.mean(itd_mem))
@@ -79,5 +82,23 @@ for i in range(len(angles)):  # by angle
 
 print(f"Finsihed encoding! Time elapsed:{t.time() - start_time}s")
 
+# at the moment, the array is in angle * frequency, so transpose
+spike_mem = spike_mem.transpose()
+# go through each frequency and count the total number of spikes
+for i in spike_mem:  # per frequency
+    spike_result = []
+    for j in i:  # per angle
+        mem = j[0]
+        spk = j[1]
+        fac = j[2]
+        trg = j[3]
+
+        total_spike_count = torch.sum(spk)
+        spike_result.append(torch.sum)
+
+    plt.plot(angles, spike_result)
+    plt.xlabel("Angle")
+    plt.ylabel("Spike #")
+    plt.title("Spiking activity of TDE")
 print(np.array(spike_mem).shape)
 
