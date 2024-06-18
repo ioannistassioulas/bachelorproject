@@ -229,4 +229,6 @@ for i in range(len(metadata_tau)):  # start looking at each .wav file
         results = [spike_count, angle, elevation, distance, i+1, j+1]
         spk_number.append(results)
 
+        gc.collect()
+
     # complete! onto the next sound event
