@@ -6,7 +6,7 @@ start_time = t.time()
 
 # create sound waves
 
-frequency = np.linspace(250, 8000, 32)
+frequency = np.linspace(250, 5000, 20)
 angles = np.linspace(0, 90, 10)
 sr = 7000
 distance = 0.3
