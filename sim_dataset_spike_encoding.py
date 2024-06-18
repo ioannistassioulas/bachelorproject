@@ -12,7 +12,7 @@ frequency = np.linspace(250, 5000, 20)
 angles = np.linspace(0, 90, 10)
 sr = 7000
 distance = 0.3
-time = 1
+time = 0.1
 
 # create arrays to store ITD and ILD information
 # time_difference = np.zeros([len(angles), len(frequency)])
@@ -73,7 +73,7 @@ for i in range(len(angles)):  # by angle
 
         # check to make sure of progress are still working
         gc.collect()
-        print(f"{k/(len(angles) * len(frequency))*100}% Time elapse = {t.time() - start_time}s \n Angle = {angles[i]} \n Frequency = {frequency[j]}")
+        print(f"{k/(len(angles) * len(frequency))*100}% Time elapse = {t.time() - start_time}s \nAngle = {angles[i]} \nFrequency = {frequency[j]}")
         k += 1
 
     itd_real.append(np.mean(itd_mem))
