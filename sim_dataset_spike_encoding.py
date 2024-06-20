@@ -10,7 +10,7 @@ start_time = t.time()
 
 frequency = np.arange(500, 12501, 1000)
 angles = np.arange(0, 91, 5)
-sr = 41000
+sr = 27000
 distance = 0.048
 time = 0.1
 
