@@ -17,7 +17,7 @@ start_time = t.time()
 
 frequency = np.arange(500, 5501, 1000)
 angles = np.arange(0, 91, 5)
-sr = 22700
+sr = 42000
 distance = 0.048
 time = 0.1
 
@@ -106,7 +106,8 @@ for i in spike_mem:  # per frequency
         trg = j[3]
 
         total_spike = torch.tensor(signal.convolve(spk, mem))
-        total_spike_count = torch.sum(total_spike) / torch.sum(spk)
+        print(spk.size())
+        total_spike_count = torch.sum(total_spike) / (torch.sum(spk) * spk.size())
         print(torch.sum(spk))
         spike_result.append(total_spike_count)
 
