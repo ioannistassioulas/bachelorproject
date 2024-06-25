@@ -31,13 +31,13 @@ print(f"Acquiring sound files done! Time elapsed = {t.time() - start_time}s")
 # array of all files most important info
 # setup of array : [audio file, sound_event, metadata of event]
 keypoints = []
-sr = 28000
+sr = 500
 
+# save everything to results file from now on
+home = home + '/results/'
 n = 0
 # start parsing through csv file and saving information
 for file in metadata_tau:  # parse through each audio event
-    soundwave_file = home + f'/file_{n+1}'
-
     # get names of files
     root_name = file.partition('.')[0]
     meta = metadata_tau_loc + root_name + ".csv"
@@ -52,7 +52,7 @@ for file in metadata_tau:  # parse through each audio event
     a = {"IBL": intensitiesBefore[0], "IBR": intensitiesBefore[1],
                               "IAL": intensitiesAfter[0], "IAR": intensitiesAfter[1]}
     stereoCSV = pd.DataFrame.from_dict(a, orient='index').transpose()
-    stereoCSV.to_csv(f"Down-Sampling-{n+1}.csv")
+    stereoCSV.to_csv(home + f"Down-Sampling-{n+1}.csv")
 
     # start reading through specific csv file
     meta_csv = pd.read_csv(meta)
@@ -83,11 +83,13 @@ print(f"Reading data done! Time elapsed = {t.time() - start_time}s")
 
 # START LOOPING THROUGH FILES AND EVENTS
 for i in range(len(metadata_tau)):  # start looking at each .wav file
+
     root_name = metadata_tau[i].partition('.')[0]
     stereo = pd.read_csv(home + f"/Down-Sampling-{i+1}.csv")
+
     sig = [stereo['IAL'].to_numpy(), stereo['IAR'].to_numpy()]
     sig = [sig[0][~np.isnan(sig[0])], sig[1][~np.isnan(sig[1])]]
-
+    print(len(keypoints[i]))
     for j in range(len(keypoints[i])):  # go through all sound events
         start = keypoints[i][j][0]
         end = keypoints[i][j][1]
@@ -118,8 +120,8 @@ for i in range(len(metadata_tau)):  # start looking at each .wav file
         b = {"Freq-Range": freq_fft, "Left-FFT": wave_fft[0], "Right-FFT": wave_fft[1]}
 
         freq_info = pd.DataFrame.from_dict(b, orient="index").transpose()
-        freq_info.to_csv(f"Fourier-Results-{i+1}-{j+1}.csv")
-        avg_freq = int(np.mean([main_freq_l, main_freq_r]))
+        freq_info.to_csv(home + f"Fourier-Results-{i+1}-{j+1}.csv")
+        avg_freq = int(np.abs(np.mean([main_freq_l, main_freq_r])))
         freq_band = [avg_freq - 5, avg_freq + 5]
 
         waves = ap.filter_waves(waves, freq_band, "bandpass")
@@ -133,7 +135,7 @@ for i in range(len(metadata_tau)):  # start looking at each .wav file
 
         c = {"ZL": zero_x[0], "ZR": zero_x[1], "WL": waves[0], "WR": waves[1]}
         zero_data = pd.DataFrame.from_dict(c, orient="index").transpose()
-        zero_data.to_csv(f"Zero-Crossings-{i+1}-{j+1}.csv")
+        zero_data.to_csv(home + f"Zero-Crossings-{i+1}-{j+1}.csv")
         print(f"Zero crossing complete! Time elapsed = {t.time() - start_time}s")
 
         # delete all time intervals that are higher than expected (due to fault)
@@ -165,7 +167,7 @@ for i in range(len(metadata_tau)):  # start looking at each .wav file
         mem, spk, fac, trg = tde.tde(tau_tde, tau_tde, tau_mem, torch.tensor(1/sr), torch.tensor(timer - 1), current_f, current_t)
         d = {"Mem": mem[0], "Spk": spk[0], "Fac": fac[0], "Trg": trg[0]}
         tde_results = pd.DataFrame.from_dict(d, orient="index").transpose()
-        tde_results.to_csv(f"LIF-Response-{i+1}-{j+1}.csv")
+        tde_results.to_csv(home + f"LIF-Response-{i+1}-{j+1}.csv")
         print(f"TDE simulation complete! TIme elapsed: {t.time() - start_time}s")
 
         # start counting all spikes
@@ -175,7 +177,7 @@ for i in range(len(metadata_tau)):  # start looking at each .wav file
         # add spike count to final counter alongside the required angle
         angle = 45 - angle
         results = pd.DataFrame([spike_count, angle, elevation, distance])
-        results.to_csv(f"Final-Results-{i+1}-{j+1}.csv")
+        results.to_csv(home + f"Final-Results-{i+1}-{j+1}.csv")
         print(f"Spike encoding complete! TIme elapsed: {t.time() - start_time}s")
 
         # throw away to try and save a bit of memory
