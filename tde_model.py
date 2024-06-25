@@ -45,7 +45,7 @@ def tde(tau_fac, tau_trg, tau_mem, time_step, n_time_steps, fac_in, trg_in):
 
     # begin simulating with euler method for each timestep
     for t in range(n_time_steps):
-        mthr = mem-1.0  # membrane threshold
+        mthr = mem-0.85  # membrane threshold
         out = spike_fn(mthr)  # all values above threshold, return spike
 
         # integrate value for fac, trg and mem voltage

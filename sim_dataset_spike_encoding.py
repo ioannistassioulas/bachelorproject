@@ -16,7 +16,7 @@ start_time = t.time()
 # create sound waves
 
 frequency = np.arange(500, 5501, 1000)
-angles = np.arange(0, 91, 5)
+angles = np.arange(0, 81, 5)
 sr = 42000
 distance = 0.048
 time = 0.1
@@ -25,7 +25,8 @@ time = 0.1
 spike_mem = []
 itd_real = []
 ild_real = []
-
+time_difference = []
+err = []
 # see above about counter
 k = 1
 
@@ -35,7 +36,8 @@ for i in range(len(angles)):  # by angle
     itd_mem = []
     ild_mem = []
     spike_rec = []
-
+    tim_mem = []
+    err_m = []
     for j in range(len(frequency)):  # by frequency
         l, r, itd, ild = ap.generate_test_waves(angles[i], frequency[j], sr, time, distance)
         itd_mem.append(itd)
@@ -50,17 +52,14 @@ for i in range(len(angles)):  # by angle
         spike_data, spike_values = ap.fix_broadcasting(spike_data, spike_values)
         spike_x, spike_y = ap.fix_broadcasting(spike_x, spike_y)
 
-        # # determine the inter aural time difference from the data amassed
-        # time_differences = spike_data[1] - spike_data[0]  # find difference in zero crossings from both channels
-        # time_difference[i][j] = np.mean(time_differences)  # return mean into metadata super array
-        #
-        # level_differences = spike_y[1] - spike_y[0]
-        # level_difference[i][j] = np.mean(level_differences)
-        # print("done!")
-        # start making spikes
-        # transfer zeros into spike train
+        # determine the inter aural time difference from the data amassed
+        time_differences = spike_data[1] - spike_data[0]  # find difference in zero crossings from both channels
+        tim_mem.append(np.mean(time_differences))  # return mean into metadata super array
+        err_m.append(np.std(time_differences))
 
+        # transfer zeros into spike train
         timer  = int(time * sr)
+
         spike_data[0] = (spike_data[0]) * sr  # subtract by start time to keep length consistent with zeros
         current_f = torch.zeros(timer)
         for n in spike_data[0]:
@@ -85,6 +84,8 @@ for i in range(len(angles)):  # by angle
 
     itd_real.append(np.mean(itd_mem))
     ild_real.append(np.mean(ild_mem))
+    time_difference.append(tim_mem)
+    err.append(err_m)
 
     spike_rec = torch.stack(spike_rec)
     spike_mem.append(spike_rec)
@@ -92,6 +93,15 @@ for i in range(len(angles)):  # by angle
 spike_mem = torch.stack(spike_mem)
 spike_mem = spike_mem.permute((1, 0, 2, 3))
 print(f"Finished encoding! Time elapsed:{t.time() - start_time}s")
+
+theta = np.cos(np.deg2rad(angles))
+# make plot of itd
+plt.scatter(angles, itd_real, label="Encoded ITD")
+plt.plot(angles, distance / 343 * np.cos(np.deg2rad(angles)), label=r'$\frac{d}{v}\cos{(\theta)}$')
+plt.ylabel(r'$\Delta t$')
+plt.xlabel(r'$\theta$')
+plt.legend()
+plt.show()
 
 # go through each frequency and count the total number of spikes
 y = 0
@@ -105,22 +115,81 @@ for i in spike_mem:  # per frequency
         fac = j[2]
         trg = j[3]
 
-        total_spike = torch.tensor(signal.convolve(spk, mem))
-        print(spk.size())
-        total_spike_count = torch.sum(total_spike) / (torch.sum(spk) * spk.size())
-        print(torch.sum(spk))
-        spike_result.append(total_spike_count)
+        spike_result.append(torch.sum(spk))
 
         z += 1
 
     plt.plot(itd_real, spike_result, label=f"Frequency = {frequency[y]}")
     plt.scatter(itd_real, spike_result)
+    plt.xlabel("$\Delta t$")
+    plt.ylabel("# of Spikes")
+    plt.title("TDE performance rate")
+    plt.legend()
+    plt.show()
+
     y += 1
 
-plt.xlabel("$\Delta t$")
-plt.ylabel("Spike activity")
-plt.title("TDE performance rate")
-plt.legend()
+# frequency 550, angle 0
+i = 0
+j = 0
+fig, ax = plt.subplots(2)
+
+ax[0].plot(np.arange(len(spike_mem[i][j][2])), spike_mem[i][j][2], label="facilitatory")
+ax[0].plot(np.arange(len(spike_mem[i][j][3])), spike_mem[i][j][3], label="trigger")
+ax[0].legend()
+
+ax[1].plot(np.arange(len(spike_mem[i][j][0])), spike_mem[i][j][0], label="Membrane")
+ax[1].plot(np.arange(len(spike_mem[i][j][1])), spike_mem[i][j][1], label="Spikes")
+ax[1].axhline(y=0.7, color='blue', marker='_', label="threshold")
+ax[1].legend()
+
+plt.title(f"TDE activity for Frequency {frequency[i]}Hz and Angle of {angles[j]} degrees")
+
+fig.text(0.5, 0.04, 'Time', ha='center')
+fig.text(0.04, 0.5, 'Potential', va='center', rotation='vertical')
+
 plt.show()
 
-# try again
+# frequency 550, angle 60
+i = 0
+j = 12
+fig, ax = plt.subplots(2)
+
+ax[0].plot(np.arange(len(spike_mem[i][j][2])), spike_mem[i][j][2], label="facilitatory")
+ax[0].plot(np.arange(len(spike_mem[i][j][3])), spike_mem[i][j][3], label="trigger")
+ax[0].legend()
+
+ax[1].plot(np.arange(len(spike_mem[i][j][0])), spike_mem[i][j][0], label="Membrane")
+ax[1].plot(np.arange(len(spike_mem[i][j][1])), spike_mem[i][j][1], label="Spikes")
+ax[1].axhline(y=0.7, color='blue', marker='_', label="threshold")
+ax[1].legend()
+
+plt.title(f"TDE activity for Frequency {frequency[i]}Hz and Angle of {angles[j]} degrees")
+
+fig.text(0.5, 0.04, 'Time', ha='center')
+fig.text(0.04, 0.5, 'Potential', va='center', rotation='vertical')
+
+plt.show()
+
+# frequency 3500, angle 0
+i = 3
+j = 0
+fig, ax = plt.subplots(2)
+
+ax[0].plot(np.arange(len(spike_mem[i][j][2])), spike_mem[i][j][2], label="facilitatory")
+ax[0].plot(np.arange(len(spike_mem[i][j][3])), spike_mem[i][j][3], label="trigger")
+ax[0].legend()
+
+ax[1].plot(np.arange(len(spike_mem[i][j][0])), spike_mem[i][j][0], label="Membrane")
+ax[1].plot(np.arange(len(spike_mem[i][j][1])), spike_mem[i][j][1], label="Spikes")
+ax[1].axhline(y=0.7, color='blue', marker='_', label="threshold")
+ax[1].legend()
+
+plt.title(f"TDE activity for Frequency {frequency[i]}Hz and Angle of {angles[j]} degrees")
+fig.text(0.5, 0.04, 'Time', ha='center')
+fig.text(0.04, 0.5, 'Potential', va='center', rotation='vertical')
+
+plt.show()
+
+
+plt.plot(angles, )

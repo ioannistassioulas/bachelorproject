@@ -31,7 +31,7 @@ print(f"Acquiring sound files done! Time elapsed = {t.time() - start_time}s")
 # array of all files most important info
 # setup of array : [audio file, sound_event, metadata of event]
 keypoints = []
-sr = 28000  # see table on report for justification
+sr = 24000  # see table on report for justification
 
 # save everything to results file from now on
 home = home + '/results/'
@@ -43,16 +43,18 @@ for file in metadata_tau:  # parse through each audio event
     meta = metadata_tau_loc + root_name + ".csv"
     audio = audio_tau_loc + root_name + ".wav"
 
-    # process audio file and record to other array
-    dummy, intensities = wavfile.read(audio)
-    samp = int(len(intensities) * sr / dummy)
-
-    intensitiesBefore = np.array([intensities.transpose()[0], intensities.transpose()[2]])
-    intensitiesAfter = np.array([signal.resample(intensitiesBefore[0], samp), signal.resample(intensitiesBefore[1], samp)])
-    a = {"IBL": intensitiesBefore[0], "IBR": intensitiesBefore[1],
-                              "IAL": intensitiesAfter[0], "IAR": intensitiesAfter[1]}
-    stereoCSV = pd.DataFrame.from_dict(a, orient='index').transpose()
-    stereoCSV.to_csv(home + f"Down-Sampling-{n+1}.csv")
+    # # # process audio file and record to other array
+    # dummy, intensities = wavfile.read(audio)
+    # samp = int(len(intensities) * sr / dummy)
+    # q = 2 # decimation factor
+    #
+    # intensitiesBefore = np.array([intensities.transpose()[0], intensities.transpose()[2]])
+    # intensitiesAfter = np.array([signal.decimate(intensitiesBefore[0], q), signal.decimate(intensitiesBefore[1], q)])
+    #
+    # a = {"IBL": intensitiesBefore[0], "IBR": intensitiesBefore[1],
+    #                           "IAL": intensitiesAfter[0], "IAR": intensitiesAfter[1]}
+    # stereoCSV = pd.DataFrame.from_dict(a, orient='index').transpose()
+    # stereoCSV.to_csv(home + f"Down-Sampling-{n+1}.csv")
 
     # start reading through specific csv file
     meta_csv = pd.read_csv(meta)
@@ -81,6 +83,7 @@ for file in metadata_tau:  # parse through each audio event
 # print complete message to timestamp
 print(f"Reading data done! Time elapsed = {t.time() - start_time}s")
 
+kounter = 0
 # START LOOPING THROUGH FILES AND EVENTS
 for i in range(len(metadata_tau)):  # start looking at each .wav file
 
@@ -92,16 +95,16 @@ for i in range(len(metadata_tau)):  # start looking at each .wav file
 
     for j in range(len(keypoints[i])):  # go through all sound events
         start = keypoints[i][j][0]
-        end = keypoints[i][j][1]
+        end = np.min([keypoints[i][j][1], start + 0.5])
         elevation = keypoints[i][j][2]
         angle = keypoints[i][j][3]
         distance = keypoints[i][j][4]
 
+        timespan_len = int((end - start) * sr)
+
         # Practice filtering out all the data
-        timespan = [np.arange(len(np.array(sig[0]))), np.arange(len(np.array(sig[1])))]
+        timespan = [np.arange(timespan_len), np.arange(timespan_len)]
         timespan, waves = ap.fix_broadcasting(timespan, sig)
-        timespan, waves = ap.set_recording(timespan, waves, int(start * sr),
-                                                          int(end * sr))
 
         # To determine frequency band, FFT and find the strongest frequency peaks
         wave_fft = fft.fft(waves)  # peaks of fft transform
@@ -141,18 +144,19 @@ for i in range(len(metadata_tau)):  # start looking at each .wav file
         current_f = torch.zeros(len(timespan[0]))
         for j1 in zero_x[0]:
             current_f[int(j1)] = torch.ones(1)  # at each index of the time step you input in facilitatory array
-
+        print("DONE!")
         # repeating for trigger input
         zero_x[1] = (zero_x[1] - start) * sr
         current_t = torch.zeros(len(timespan[1]))
         for j2 in zero_x[1]:
             current_t[int(j2)] = torch.ones(1)
-
+        print("DONE!")
         # pass spike train into tde simulator
 
         tau_tde = torch.tensor(0.001)
         tau_mem = torch.tensor(0.005)
         timer = int((end - start) * sr)
+        print("DONE!")
 
         mem, spk, fac, trg = tde.tde(tau_tde, tau_tde, tau_mem, torch.tensor(1/sr), torch.tensor(timer - 1), current_f, current_t)
         d = {"Mem": mem[0], "Spk": spk[0], "Fac": fac[0], "Trg": trg[0]}
@@ -169,7 +173,10 @@ for i in range(len(metadata_tau)):  # start looking at each .wav file
         results = pd.DataFrame([spike_count, angle, elevation, distance])
         results.to_csv(home + f"{i+1}-{j+1}-Final-Results.csv")
         print(f"Spike encoding complete! TIme elapsed: {t.time() - start_time}s")
-
+        print('DONE!')
         # throw away to try and save a bit of memory
+        print(f"{kounter/(len(metadata_tau) * len(keypoints[i]))*100}% Time elapse = {t.time() - start_time}s")
+
+        kounter += 1
         gc.collect()
 
