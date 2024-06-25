@@ -1,5 +1,6 @@
 import audio_processing as ap
 import tde_model as tde
+import matplotlib.pyplot as plt
 
 import os
 from os import path
@@ -43,18 +44,18 @@ for file in metadata_tau:  # parse through each audio event
     meta = metadata_tau_loc + root_name + ".csv"
     audio = audio_tau_loc + root_name + ".wav"
 
-    # # # process audio file and record to other array
-    # dummy, intensities = wavfile.read(audio)
-    # samp = int(len(intensities) * sr / dummy)
-    # q = 2 # decimation factor
-    #
-    # intensitiesBefore = np.array([intensities.transpose()[0], intensities.transpose()[2]])
-    # intensitiesAfter = np.array([signal.decimate(intensitiesBefore[0], q), signal.decimate(intensitiesBefore[1], q)])
-    #
-    # a = {"IBL": intensitiesBefore[0], "IBR": intensitiesBefore[1],
-    #                           "IAL": intensitiesAfter[0], "IAR": intensitiesAfter[1]}
-    # stereoCSV = pd.DataFrame.from_dict(a, orient='index').transpose()
-    # stereoCSV.to_csv(home + f"Down-Sampling-{n+1}.csv")
+    # process audio file and record to other array
+    dummy, intensities = wavfile.read(audio)
+    q = 2  # decimation factor
+    samp = int(len(intensities)  * 24000 / 48000)
+
+    intensitiesBefore = np.array([intensities.transpose()[0], intensities.transpose()[2]])
+    intensitiesAfter = np.array([signal.resample(intensitiesBefore[0], samp), signal.resample(intensitiesBefore[1], samp)])
+
+    a = {"IBL": intensitiesBefore[0], "IBR": intensitiesBefore[1],
+                              "IAL": intensitiesAfter[0], "IAR": intensitiesAfter[1]}
+    stereoCSV = pd.DataFrame.from_dict(a, orient='index').transpose()
+    stereoCSV.to_csv(home + f"Down-Sampling-{n+1}.csv")
 
     # start reading through specific csv file
     meta_csv = pd.read_csv(meta)
@@ -106,22 +107,25 @@ for i in range(len(metadata_tau)):  # start looking at each .wav file
         timespan = [np.arange(timespan_len), np.arange(timespan_len)]
         timespan, waves = ap.fix_broadcasting(timespan, sig)
 
-        # To determine frequency band, FFT and find the strongest frequency peaks
-        wave_fft = fft.fft(waves)  # peaks of fft transform
-        freq_fft = fft.fftfreq(len(timespan[0]), 1 / sr)  # frequencies to check over
+        # # To determine frequency band, FFT and find the strongest frequency peaks
+        # wave_fft = fft.fft(waves)  # peaks of fft transform
+        # freq_fft = fft.fftfreq(len(timespan[0]), 1 / sr)  # frequencies to check over
+        # plt.plot(freq_fft, wave_fft[0])
+        # plt.plot()
+        # plt.show()
+        # l_max = np.max(wave_fft[0])
+        # r_max = np.max(wave_fft[1])
+        # main_freq_l = np.abs(freq_fft[wave_fft[0].argmax()])  # main frequency
+        # main_freq_r = np.abs(freq_fft[wave_fft[1].argmax()])  # main frequency
 
-        l_max = np.max(wave_fft[0])
-        r_max = np.max(wave_fft[1])
-        main_freq_l = np.abs(freq_fft[wave_fft[0].argmax()])  # main frequency
-        main_freq_r = np.abs(freq_fft[wave_fft[1].argmax()])  # main frequency
+        # b = {"Freq-Range": freq_fft, "Left-FFT": wave_fft[0], "Right-FFT": wave_fft[1]}
 
-        b = {"Freq-Range": freq_fft, "Left-FFT": wave_fft[0], "Right-FFT": wave_fft[1]}
+        # freq_info = pd.DataFrame.from_dict(b, orient="index").transpose()
+        # freq_info.to_csv(home + f"{i+1}-{j+1}-Fourier-Results.csv")
+        # avg_freq = int(np.mean([main_freq_l, main_freq_r]))
+        # print(f"freq = {avg_freq}")
 
-        freq_info = pd.DataFrame.from_dict(b, orient="index").transpose()
-        freq_info.to_csv(home + f"{i+1}-{j+1}-Fourier-Results.csv")
-        avg_freq = int(np.abs(np.mean([main_freq_l, main_freq_r])))
-        freq_band = [avg_freq - 5, avg_freq + 5]
-
+        freq_band = [540, 560]
         waves = ap.filter_waves(waves, freq_band, "bandpass")
         print(f"Filtering complete! Time elapsed = {t.time() - start_time}s")
 
@@ -135,6 +139,19 @@ for i in range(len(metadata_tau)):  # start looking at each .wav file
         zero_data = pd.DataFrame.from_dict(c, orient="index").transpose()
         zero_data.to_csv(home + f"{i+1}-{j+1}-Zero-Crossings.csv")
         print(f"Zero crossing complete! Time elapsed = {t.time() - start_time}s")
+
+        fig, ax = plt.subplots(2)
+        ax[0].plot(np.arange(len(sig[0][:timespan_len])), sig[0][:timespan_len])
+        ax[0].plot(np.arange(len(sig[1][:timespan_len])), sig[1][:timespan_len])
+
+        zero_x[0] = (zero_x[0] - start) * sr  # subtract by start time such that length is consistent with timestep length
+        zero_x[1] = (zero_x[1] - start) * sr
+        ax[1].plot(np.arange(len(waves[0])), waves[0], color='red')
+        ax[1].plot(np.arange(len(waves[1])), waves[1], color='blue')
+        ax[1].scatter(zero_x[0], [0] * len(zero_x[0]), color='red')
+        ax[1].scatter(zero_x[1], [0] * len(zero_x[1]), color='blue')
+
+        plt.show()
 
         # throw away to try and save a bit of memory
         gc.collect()

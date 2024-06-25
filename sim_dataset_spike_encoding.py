@@ -96,10 +96,11 @@ print(f"Finished encoding! Time elapsed:{t.time() - start_time}s")
 
 theta = np.cos(np.deg2rad(angles))
 # make plot of itd
-plt.scatter(angles, itd_real, label="Encoded ITD")
-plt.plot(angles, distance / 343 * np.cos(np.deg2rad(angles)), label=r'$\frac{d}{v}\cos{(\theta)}$')
+plt.scatter(angles, itd_real, label="Encoded ITD", color="black")
+plt.plot(angles, distance / 343 * np.cos(np.deg2rad(angles)), label=r'$\frac{d}{v}\cos{(\theta)}$', color="red")
 plt.ylabel(r'$\Delta t$')
 plt.xlabel(r'$\theta$')
+plt.title("ITD vs Angle")
 plt.legend()
 plt.show()
 
@@ -136,14 +137,16 @@ fig, ax = plt.subplots(2)
 
 ax[0].plot(np.arange(len(spike_mem[i][j][2])), spike_mem[i][j][2], label="facilitatory")
 ax[0].plot(np.arange(len(spike_mem[i][j][3])), spike_mem[i][j][3], label="trigger")
+ax[0].set_title("Facilitatory and Trigger Inputs")
 ax[0].legend()
 
 ax[1].plot(np.arange(len(spike_mem[i][j][0])), spike_mem[i][j][0], label="Membrane")
 ax[1].plot(np.arange(len(spike_mem[i][j][1])), spike_mem[i][j][1], label="Spikes")
 ax[1].axhline(y=0.7, color='blue', marker='_', label="threshold")
+ax[1].set_title("LIF Neuron and corresponding spikes")
 ax[1].legend()
 
-plt.title(f"TDE activity for Frequency {frequency[i]}Hz and Angle of {angles[j]} degrees")
+fig.suptitle(f"TDE activity for Frequency of {frequency[i]}Hz and Angle of {angles[j]} degrees")
 
 fig.text(0.5, 0.04, 'Time', ha='center')
 fig.text(0.04, 0.5, 'Potential', va='center', rotation='vertical')
@@ -157,14 +160,16 @@ fig, ax = plt.subplots(2)
 
 ax[0].plot(np.arange(len(spike_mem[i][j][2])), spike_mem[i][j][2], label="facilitatory")
 ax[0].plot(np.arange(len(spike_mem[i][j][3])), spike_mem[i][j][3], label="trigger")
+ax[0].set_title("Facilitatory and Trigger Inputs")
 ax[0].legend()
 
 ax[1].plot(np.arange(len(spike_mem[i][j][0])), spike_mem[i][j][0], label="Membrane")
 ax[1].plot(np.arange(len(spike_mem[i][j][1])), spike_mem[i][j][1], label="Spikes")
 ax[1].axhline(y=0.7, color='blue', marker='_', label="threshold")
+ax[1].set_title("LIF Neuron and corresponding spikes")
 ax[1].legend()
 
-plt.title(f"TDE activity for Frequency {frequency[i]}Hz and Angle of {angles[j]} degrees")
+fig.suptitle(f"TDE activity for Frequency of {frequency[i]}Hz and Angle of {angles[j]} degrees")
 
 fig.text(0.5, 0.04, 'Time', ha='center')
 fig.text(0.04, 0.5, 'Potential', va='center', rotation='vertical')
@@ -178,14 +183,17 @@ fig, ax = plt.subplots(2)
 
 ax[0].plot(np.arange(len(spike_mem[i][j][2])), spike_mem[i][j][2], label="facilitatory")
 ax[0].plot(np.arange(len(spike_mem[i][j][3])), spike_mem[i][j][3], label="trigger")
+ax[0].set_title("Facilitatory and Trigger Inputs")
 ax[0].legend()
 
 ax[1].plot(np.arange(len(spike_mem[i][j][0])), spike_mem[i][j][0], label="Membrane")
 ax[1].plot(np.arange(len(spike_mem[i][j][1])), spike_mem[i][j][1], label="Spikes")
 ax[1].axhline(y=0.7, color='blue', marker='_', label="threshold")
+ax[1].set_title("LIF Neuron and corresponding spikes")
 ax[1].legend()
 
-plt.title(f"TDE activity for Frequency {frequency[i]}Hz and Angle of {angles[j]} degrees")
+
+fig.suptitle(f"TDE activity for Frequency of {frequency[i]}Hz and Angle of {angles[j]} degrees")
 fig.text(0.5, 0.04, 'Time', ha='center')
 fig.text(0.04, 0.5, 'Potential', va='center', rotation='vertical')
 

@@ -51,7 +51,7 @@ def filter_waves(sig, wc, band):
     :param band: default low-pass, but can change to high-pass 'hp' or bandpass 'bp'
     :return:
     """
-    sos = signal.butter(10, wc, fs=48000, btype=band, output='sos')
+    sos = signal.butter(10, wc, fs=48000/2, btype=band, output='sos')
 
     left = sig[0]
     right = sig[1]
