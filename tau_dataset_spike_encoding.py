@@ -31,7 +31,7 @@ print(f"Acquiring sound files done! Time elapsed = {t.time() - start_time}s")
 # array of all files most important info
 # setup of array : [audio file, sound_event, metadata of event]
 keypoints = []
-sr = 500
+sr = 28000  # see table on report for justification
 
 # save everything to results file from now on
 home = home + '/results/'
@@ -89,7 +89,7 @@ for i in range(len(metadata_tau)):  # start looking at each .wav file
 
     sig = [stereo['IAL'].to_numpy(), stereo['IAR'].to_numpy()]
     sig = [sig[0][~np.isnan(sig[0])], sig[1][~np.isnan(sig[1])]]
-    print(len(keypoints[i]))
+
     for j in range(len(keypoints[i])):  # go through all sound events
         start = keypoints[i][j][0]
         end = keypoints[i][j][1]
@@ -99,14 +99,9 @@ for i in range(len(metadata_tau)):  # start looking at each .wav file
 
         # Practice filtering out all the data
         timespan = [np.arange(len(np.array(sig[0]))), np.arange(len(np.array(sig[1])))]
-
-        # look at events
         timespan, waves = ap.fix_broadcasting(timespan, sig)
         timespan, waves = ap.set_recording(timespan, waves, int(start * sr),
                                                           int(end * sr))
-
-        unfiltered = waves
-        time_unfiltered = timespan
 
         # To determine frequency band, FFT and find the strongest frequency peaks
         wave_fft = fft.fft(waves)  # peaks of fft transform
@@ -120,7 +115,7 @@ for i in range(len(metadata_tau)):  # start looking at each .wav file
         b = {"Freq-Range": freq_fft, "Left-FFT": wave_fft[0], "Right-FFT": wave_fft[1]}
 
         freq_info = pd.DataFrame.from_dict(b, orient="index").transpose()
-        freq_info.to_csv(home + f"Fourier-Results-{i+1}-{j+1}.csv")
+        freq_info.to_csv(home + f"{i+1}-{j+1}-Fourier-Results.csv")
         avg_freq = int(np.abs(np.mean([main_freq_l, main_freq_r])))
         freq_band = [avg_freq - 5, avg_freq + 5]
 
@@ -135,13 +130,8 @@ for i in range(len(metadata_tau)):  # start looking at each .wav file
 
         c = {"ZL": zero_x[0], "ZR": zero_x[1], "WL": waves[0], "WR": waves[1]}
         zero_data = pd.DataFrame.from_dict(c, orient="index").transpose()
-        zero_data.to_csv(home + f"Zero-Crossings-{i+1}-{j+1}.csv")
+        zero_data.to_csv(home + f"{i+1}-{j+1}-Zero-Crossings.csv")
         print(f"Zero crossing complete! Time elapsed = {t.time() - start_time}s")
-
-        # delete all time intervals that are higher than expected (due to fault)
-        time_differences = np.abs(zero_x[1] - zero_x[0])  # experimental phase crossing
-        inter_distance = 2 * np.sin(np.deg2rad(35)) * 0.042
-        final_angle = np.rad2deg(ap.angle_itd(inter_distance, time_differences))
 
         # throw away to try and save a bit of memory
         gc.collect()
@@ -167,7 +157,7 @@ for i in range(len(metadata_tau)):  # start looking at each .wav file
         mem, spk, fac, trg = tde.tde(tau_tde, tau_tde, tau_mem, torch.tensor(1/sr), torch.tensor(timer - 1), current_f, current_t)
         d = {"Mem": mem[0], "Spk": spk[0], "Fac": fac[0], "Trg": trg[0]}
         tde_results = pd.DataFrame.from_dict(d, orient="index").transpose()
-        tde_results.to_csv(home + f"LIF-Response-{i+1}-{j+1}.csv")
+        tde_results.to_csv(home + f"{i+1}-{j+1}-LIF-Response.csv")
         print(f"TDE simulation complete! TIme elapsed: {t.time() - start_time}s")
 
         # start counting all spikes
@@ -177,7 +167,7 @@ for i in range(len(metadata_tau)):  # start looking at each .wav file
         # add spike count to final counter alongside the required angle
         angle = 45 - angle
         results = pd.DataFrame([spike_count, angle, elevation, distance])
-        results.to_csv(home + f"Final-Results-{i+1}-{j+1}.csv")
+        results.to_csv(home + f"{i+1}-{j+1}-Final-Results.csv")
         print(f"Spike encoding complete! TIme elapsed: {t.time() - start_time}s")
 
         # throw away to try and save a bit of memory
