@@ -47,10 +47,9 @@ for file in metadata_tau:  # parse through each audio event
     # process audio file and record to other array
     dummy, intensities = wavfile.read(audio)
     q = 2  # decimation factor
-    samp = int(len(intensities)  * 24000 / 48000)
 
     intensitiesBefore = np.array([intensities.transpose()[0], intensities.transpose()[2]])
-    intensitiesAfter = np.array([signal.resample(intensitiesBefore[0], samp), signal.resample(intensitiesBefore[1], samp)])
+    intensitiesAfter = np.array([signal.decimate(intensitiesBefore[0], q), signal.decimate(intensitiesBefore[1], q)])
 
     a = {"IBL": intensitiesBefore[0], "IBR": intensitiesBefore[1],
                               "IAL": intensitiesAfter[0], "IAR": intensitiesAfter[1]}
