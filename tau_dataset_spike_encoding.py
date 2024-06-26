@@ -114,30 +114,35 @@ for i in range(len(metadata_tau)):  # start looking at each .wav file
         r_max = np.max(wave_fft[1])
         main_freq_l = np.abs(freq_fft[wave_fft[0].argmax()])  # main frequency
         main_freq_r = np.abs(freq_fft[wave_fft[1].argmax()])  # main frequency
+        avg_freq = int(np.mean([main_freq_l, main_freq_r]))
 
-        plt.plot(freq_fft, wave_fft[0])
-        plt.scatter(main_freq_l, l_max)
-        plt.plot()
-        plt.show()
+        # plt.plot(freq_fft, wave_fft[0])
+        # plt.scatter(main_freq_l, l_max)
+        # plt.plot()
+        # plt.show()
 
-        b = {"Freq-Range": freq_fft, "Left-FFT": wave_fft[0], "Right-FFT": wave_fft[1]}
+        b = {"Freq-Range": freq_fft, "Left-FFT": wave_fft[0], "Right-FFT": wave_fft[1], "Main Frequency": [avg_freq]}
 
         freq_info = pd.DataFrame.from_dict(b, orient="index").transpose()
         freq_info.to_csv(home + f"{i+1}-{j+1}-Fourier-Results.csv")
-        avg_freq = int(np.mean([main_freq_l, main_freq_r]))
         print(f"freq = {avg_freq}")
 
-        total_number_of_crossings = avg_freq * 0.2
-
-        freq_band = [avg_freq - 5, avg_freq + 5]
+        index = int(0.1 * sr)
+        freq_to_check = 200
+        freq_band = [freq_to_check-5, freq_to_check+5]
         waves = ap.filter_waves(waves, freq_band, "bandpass")
+        waves = waves[:index]  # only measure first 0.1 seconds
+        waves = signal.resample(waves, int(len(waves) * 120000 / sr))  # upsample for clearer picture
+        sr = 120000
+        index = int(0.1*sr)
+
         print(f"Filtering complete! Time elapsed = {t.time() - start_time}s")
 
         # calculate all zero crossings
 
         # change timespan to only take 0.5 seconds
-        index = int(0.05 * sr)
-        zero_x, zero_y = ap.zero_crossing(waves[:int(index)], sr)
+
+        zero_x, zero_y = ap.zero_crossing(waves, sr)
         zero_x[0] = zero_x[0] + start  # fix problems with zeros and linmes crossing on the bar
         zero_x[1] = zero_x[1] + start
         zero_x, zero_y = ap.fix_broadcasting(zero_x, zero_y)
@@ -152,6 +157,7 @@ for i in range(len(metadata_tau)):  # start looking at each .wav file
         ax[0].plot(np.arange(len(sig[1][:timespan_len])), sig[1][:timespan_len], label="right")
         ax[0].set_title("Unfiltered")
         ax[0].legend()
+
         zero_x[0] = (zero_x[0] - start) * sr  # subtract by start time such that length is consistent with timestep length
         zero_x[1] = (zero_x[1] - start) * sr
         ax[1].plot(np.arange(len(waves[0])), waves[0], color='red', label="left")
@@ -165,41 +171,56 @@ for i in range(len(metadata_tau)):  # start looking at each .wav file
         fig.text(0.04, 0.5, 'Intensity', va='center', rotation='vertical')
         plt.show()
 
+        itd = (np.array(zero_x[0]) - np.array(zero_x[1]))/sr
+        print(f"{np.mean(itd)} pm {np.std(itd)}")
+        print(f"Angle = {np.rad2deg(ap.angle_itd(0.084, np.mean(itd)))}")
         # throw away to try and save a bit of memory
         gc.collect()
 
-        zero_x[0] = zero_x[0] - start
-        zero_x[1] = zero_x[1] - start
         # transfer zeros into spike train
-        current_f = torch.zeros(timespan_len)
+        current_f = torch.zeros(len(waves[0]))
         for j1 in zero_x[0]:
             current_f[int(j1)] = torch.ones(1)  # at each index of the time step you input in facilitatory array
-        current_f = current_f[:index]
-        current_t = torch.zeros(timespan_len)
+
+        current_t = torch.zeros(len(waves[1]))
         for j2 in zero_x[1]:
             current_t[int(j2)] = torch.ones(1)
-        current_t = current_t[:index]
+
         # pass spike train into tde simulator
 
-        tau_tde = torch.tensor(50/sr)
-        tau_mem = torch.tensor(1/sr)
-        timer = index
-        print("DONE!")
+        tau_tde = torch.tensor(1/sr)
+        tau_mem = torch.tensor(100/sr)
 
-        mem, spk, fac, trg = tde.tde(tau_tde, tau_tde, tau_mem, torch.tensor(1/sr), torch.tensor(timer - 2), current_f, current_t)
+        print(len(current_f))
+        # current_f = current_f[:index]
+        # current_t = current_t[:index]
+        # print(len(current_f))
 
-        fig, ax = plt.subplots(2)
+        mem, spk, fac, trg = tde.tde(tau_tde, tau_tde, tau_mem, torch.tensor(1/sr), torch.tensor(len(current_f)), current_f, current_t)
 
-        ax[0].plot(np.arange(len(fac[0])), fac[0], label="facilitatory")
-        ax[0].plot(np.arange(len(trg[0])), trg[0], label="trigger")
-        ax[0].set_title("Facilitatory and Trigger Inputs")
+        fig, ax = plt.subplots(4)
+        ax[0].plot(np.arange(len(sig[0][:timespan_len])), sig[0][:timespan_len], label="left")
+        ax[0].plot(np.arange(len(sig[1][:timespan_len])), sig[1][:timespan_len], label="right")
+        ax[0].set_title("Unfiltered")
         ax[0].legend()
 
-        ax[1].plot(np.arange(len(mem[0])), mem[0], label="Membrane")
-        ax[1].plot(np.arange(len(spk[0])), spk[0], label="Spikes")
-        ax[1].axhline(y=0.7, color='blue', marker='_', label="threshold")
-        ax[1].set_title("LIF Neuron and corresponding spikes")
+        ax[1].plot(np.arange(len(waves[0])), waves[0], color='red', label="left")
+        ax[1].plot(np.arange(len(waves[1])), waves[1], color='blue', label="right")
+        ax[1].scatter(zero_x[0], [0] * len(zero_x[0]), color='red')
+        ax[1].scatter(zero_x[1], [0] * len(zero_x[1]), color='blue')
+        ax[1].set_title("Filtered Sound Data")
         ax[1].legend()
+
+        ax[2].plot(np.arange(len(fac[0])), fac[0], label="facilitatory")
+        ax[2].plot(np.arange(len(trg[0])), trg[0], label="trigger")
+        ax[2].set_title("Facilitatory and Trigger Inputs")
+        ax[2].legend()
+
+        ax[3].plot(np.arange(len(mem[0])), mem[0], label="Membrane")
+        ax[3].plot(np.arange(len(spk[0])), spk[0], label="Spikes")
+        ax[3].axhline(y=0.7, color='blue', marker='_', label="threshold")
+        ax[3].set_title("LIF Neuron and corresponding spikes")
+        ax[3].legend()
 
         fig.suptitle(f"TDE activity for Sound File {i+1}, Sound Event {j+1}; Angle = {45 - angle}")
 
