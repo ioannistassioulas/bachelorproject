@@ -148,10 +148,10 @@ for i in range(len(metadata_tau)):  # start looking at each .wav file
         # plt.plot(freq_fft, 2/len(waves[0]) * np.abs(wavefft[:int(len(waves[0]) // 2)]))
         # plt.show()
         wave_fft = wave_fft[:index]  # only measure first 0.1 seconds
-        wave_fft = signal.resample(wave_fft, int(len(waves) * 120000 / sr))  # upsample for clearer picture
-        sr = 120000
-        index = int(0.1*sr)
-        wave_fft = wave_fft[:index]
+        # wave_fft = signal.resample(wave_fft, int(len(waves) * 120000 / sr))  # upsample for clearer picture
+        # sr = 120000
+        # index = int(0.1*sr)
+        # wave_fft = wave_fft[:index]
 
         print(f"Filtering complete! Time elapsed = {t.time() - start_time}s")
 
