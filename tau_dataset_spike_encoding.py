@@ -32,7 +32,7 @@ print(f"Acquiring sound files done! Time elapsed = {t.time() - start_time}s")
 # array of all files most important info
 # setup of array : [audio file, sound_event, metadata of event]
 keypoints = []
-sr = 24000  # see table on report for justification
+sr = 48000  # see table on report for justification
 
 # save everything to results file from now on
 home = home + '/results/'
@@ -46,17 +46,17 @@ for file in metadata_tau:  # parse through each audio event
 
     # process audio file and record to other array
     dummy, intensities = wavfile.read(audio)
-    q = 2  # decimation factor
+    # q = 2  # decimation factor
+    # samp = int(len(intensities) * sr / dummy)
+    # intensitiesBefore = np.array([intensities.transpose()[0], intensities.transpose()[2]])
+    # # intensitiesAfter = np.array([signal.resample(intensitiesBefore[0], samp), signal.resample(intensitiesBefore[1], samp)])
+    #
+    # a = {"IBL": intensitiesBefore[0], "IBR": intensitiesBefore[1],
+    #                           "IAL": intensitiesBefore[0], "IAR": intensitiesBefore[1]}
+    # stereoCSV = pd.DataFrame.from_dict(a, orient='index').transpose()
+    # stereoCSV.to_csv(home + f"Down-Sampling-{n+1}.csv")
 
-    intensitiesBefore = np.array([intensities.transpose()[0], intensities.transpose()[2]])
-    intensitiesAfter = np.array([signal.decimate(intensitiesBefore[0], q), signal.decimate(intensitiesBefore[1], q)])
-
-    a = {"IBL": intensitiesBefore[0], "IBR": intensitiesBefore[1],
-                              "IAL": intensitiesAfter[0], "IAR": intensitiesAfter[1]}
-    stereoCSV = pd.DataFrame.from_dict(a, orient='index').transpose()
-    stereoCSV.to_csv(home + f"Down-Sampling-{n+1}.csv")
-
-    # start reading through specific csv file
+    # # start reading through specific csv file
     meta_csv = pd.read_csv(meta)
 
     # create recording arrays to extract information from csv (record of all sound events in file)
@@ -95,7 +95,7 @@ for i in range(len(metadata_tau)):  # start looking at each .wav file
 
     for j in range(len(keypoints[i])):  # go through all sound events
         start = keypoints[i][j][0]
-        end = np.min([keypoints[i][j][1], start + 0.5])
+        end = keypoints[i][j][1]
         elevation = keypoints[i][j][2]
         angle = keypoints[i][j][3]
         distance = keypoints[i][j][4]
@@ -106,30 +106,38 @@ for i in range(len(metadata_tau)):  # start looking at each .wav file
         timespan = [np.arange(timespan_len), np.arange(timespan_len)]
         timespan, waves = ap.fix_broadcasting(timespan, sig)
 
-        # # To determine frequency band, FFT and find the strongest frequency peaks
-        # wave_fft = fft.fft(waves)  # peaks of fft transform
-        # freq_fft = fft.fftfreq(len(timespan[0]), 1 / sr)  # frequencies to check over
-        # plt.plot(freq_fft, wave_fft[0])
-        # plt.plot()
-        # plt.show()
-        # l_max = np.max(wave_fft[0])
-        # r_max = np.max(wave_fft[1])
-        # main_freq_l = np.abs(freq_fft[wave_fft[0].argmax()])  # main frequency
-        # main_freq_r = np.abs(freq_fft[wave_fft[1].argmax()])  # main frequency
+        # To determine frequency band, FFT and find the strongest frequency peaks
 
-        # b = {"Freq-Range": freq_fft, "Left-FFT": wave_fft[0], "Right-FFT": wave_fft[1]}
+        wave_fft = fft.fft(waves)  # peaks of fft transform
+        freq_fft = fft.fftfreq(len(timespan[0]), 1 / sr)  # frequencies to check over
+        l_max = np.max(wave_fft[0])
+        r_max = np.max(wave_fft[1])
+        main_freq_l = np.abs(freq_fft[wave_fft[0].argmax()])  # main frequency
+        main_freq_r = np.abs(freq_fft[wave_fft[1].argmax()])  # main frequency
 
-        # freq_info = pd.DataFrame.from_dict(b, orient="index").transpose()
-        # freq_info.to_csv(home + f"{i+1}-{j+1}-Fourier-Results.csv")
-        # avg_freq = int(np.mean([main_freq_l, main_freq_r]))
-        # print(f"freq = {avg_freq}")
+        plt.plot(freq_fft, wave_fft[0])
+        plt.scatter(main_freq_l, l_max)
+        plt.plot()
+        plt.show()
 
-        freq_band = [495, 505]
+        b = {"Freq-Range": freq_fft, "Left-FFT": wave_fft[0], "Right-FFT": wave_fft[1]}
+
+        freq_info = pd.DataFrame.from_dict(b, orient="index").transpose()
+        freq_info.to_csv(home + f"{i+1}-{j+1}-Fourier-Results.csv")
+        avg_freq = int(np.mean([main_freq_l, main_freq_r]))
+        print(f"freq = {avg_freq}")
+
+        total_number_of_crossings = avg_freq * 0.2
+
+        freq_band = [avg_freq - 5, avg_freq + 5]
         waves = ap.filter_waves(waves, freq_band, "bandpass")
         print(f"Filtering complete! Time elapsed = {t.time() - start_time}s")
 
         # calculate all zero crossings
-        zero_x, zero_y = ap.zero_crossing(waves, sr)
+
+        # change timespan to only take 0.5 seconds
+        index = int(0.05 * sr)
+        zero_x, zero_y = ap.zero_crossing(waves[:int(index)], sr)
         zero_x[0] = zero_x[0] + start  # fix problems with zeros and linmes crossing on the bar
         zero_x[1] = zero_x[1] + start
         zero_x, zero_y = ap.fix_broadcasting(zero_x, zero_y)
@@ -160,22 +168,46 @@ for i in range(len(metadata_tau)):  # start looking at each .wav file
         # throw away to try and save a bit of memory
         gc.collect()
 
+        zero_x[0] = zero_x[0] - start
+        zero_x[1] = zero_x[1] - start
         # transfer zeros into spike train
-        current_f = torch.zeros(len(timespan[0]))
+        current_f = torch.zeros(timespan_len)
         for j1 in zero_x[0]:
             current_f[int(j1)] = torch.ones(1)  # at each index of the time step you input in facilitatory array
-
-        current_t = torch.zeros(len(timespan[1]))
+        current_f = current_f[:index]
+        current_t = torch.zeros(timespan_len)
         for j2 in zero_x[1]:
             current_t[int(j2)] = torch.ones(1)
+        current_t = current_t[:index]
         # pass spike train into tde simulator
 
-        tau_tde = torch.tensor(0.001)
-        tau_mem = torch.tensor(0.005)
-        timer = int((end - start) * sr)
+        tau_tde = torch.tensor(50/sr)
+        tau_mem = torch.tensor(1/sr)
+        timer = index
         print("DONE!")
 
-        mem, spk, fac, trg = tde.tde(tau_tde, tau_tde, tau_mem, torch.tensor(1/sr), torch.tensor(timer - 1), current_f, current_t)
+        mem, spk, fac, trg = tde.tde(tau_tde, tau_tde, tau_mem, torch.tensor(1/sr), torch.tensor(timer - 2), current_f, current_t)
+
+        fig, ax = plt.subplots(2)
+
+        ax[0].plot(np.arange(len(fac[0])), fac[0], label="facilitatory")
+        ax[0].plot(np.arange(len(trg[0])), trg[0], label="trigger")
+        ax[0].set_title("Facilitatory and Trigger Inputs")
+        ax[0].legend()
+
+        ax[1].plot(np.arange(len(mem[0])), mem[0], label="Membrane")
+        ax[1].plot(np.arange(len(spk[0])), spk[0], label="Spikes")
+        ax[1].axhline(y=0.7, color='blue', marker='_', label="threshold")
+        ax[1].set_title("LIF Neuron and corresponding spikes")
+        ax[1].legend()
+
+        fig.suptitle(f"TDE activity for Sound File {i+1}, Sound Event {j+1}; Angle = {45 - angle}")
+
+        fig.text(0.5, 0.04, 'Time', ha='center')
+        fig.text(0.04, 0.5, 'Potential', va='center', rotation='vertical')
+
+        plt.show()
+
         d = {"Mem": mem[0], "Spk": spk[0], "Fac": fac[0], "Trg": trg[0]}
         tde_results = pd.DataFrame.from_dict(d, orient="index").transpose()
         tde_results.to_csv(home + f"{i+1}-{j+1}-LIF-Response.csv")
