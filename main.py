@@ -2,7 +2,6 @@ import matplotlib.pyplot as plt
 import numpy as np
 import pandas as pd
 import os
-# from matplotlib import rc
 
 # final file to create all plots
 # create plot showing sample rate needed to encode time difference
@@ -31,7 +30,7 @@ data = pd.read_csv(home + "Down-Sampling-1.csv")
 sig = [data['IBL'].to_numpy(), data['IAL'].to_numpy()]
 
 sr_before = int(0.01 * 48000)
-sr_after = int(0.01*48000/2)
+sr_after = int(0.01 * 48000/2)
 
 plt.plot(np.linspace(0, 0.01, sr_before), sig[0][:sr_before], label="Before downsampling")
 plt.plot(np.linspace(0, 0.01, sr_after), sig[1][:sr_after], label="After downsampling")

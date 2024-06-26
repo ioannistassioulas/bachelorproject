@@ -124,7 +124,7 @@ for i in range(len(metadata_tau)):  # start looking at each .wav file
         # avg_freq = int(np.mean([main_freq_l, main_freq_r]))
         # print(f"freq = {avg_freq}")
 
-        freq_band = [540, 560]
+        freq_band = [495, 505]
         waves = ap.filter_waves(waves, freq_band, "bandpass")
         print(f"Filtering complete! Time elapsed = {t.time() - start_time}s")
 
@@ -140,33 +140,34 @@ for i in range(len(metadata_tau)):  # start looking at each .wav file
         print(f"Zero crossing complete! Time elapsed = {t.time() - start_time}s")
 
         fig, ax = plt.subplots(2)
-        ax[0].plot(np.arange(len(sig[0][:timespan_len])), sig[0][:timespan_len])
-        ax[0].plot(np.arange(len(sig[1][:timespan_len])), sig[1][:timespan_len])
-
+        ax[0].plot(np.arange(len(sig[0][:timespan_len])), sig[0][:timespan_len], label="left")
+        ax[0].plot(np.arange(len(sig[1][:timespan_len])), sig[1][:timespan_len], label="right")
+        ax[0].set_title("Unfiltered")
+        ax[0].legend()
         zero_x[0] = (zero_x[0] - start) * sr  # subtract by start time such that length is consistent with timestep length
         zero_x[1] = (zero_x[1] - start) * sr
-        ax[1].plot(np.arange(len(waves[0])), waves[0], color='red')
-        ax[1].plot(np.arange(len(waves[1])), waves[1], color='blue')
+        ax[1].plot(np.arange(len(waves[0])), waves[0], color='red', label="left")
+        ax[1].plot(np.arange(len(waves[1])), waves[1], color='blue', label="right")
         ax[1].scatter(zero_x[0], [0] * len(zero_x[0]), color='red')
         ax[1].scatter(zero_x[1], [0] * len(zero_x[1]), color='blue')
-
+        ax[1].set_title("Filtered Sound Data")
+        ax[1].legend()
+        fig.suptitle(f"Filtered vs Unfiltered sound data. Band gap of {freq_band} Hz")
+        fig.text(0.5, 0.04, 'Time', ha='center')
+        fig.text(0.04, 0.5, 'Intensity', va='center', rotation='vertical')
         plt.show()
 
         # throw away to try and save a bit of memory
         gc.collect()
 
         # transfer zeros into spike train
-        zero_x[0] = (zero_x[0] - start) * sr  # subtract by start time such that length is consistent with timestep length
         current_f = torch.zeros(len(timespan[0]))
         for j1 in zero_x[0]:
             current_f[int(j1)] = torch.ones(1)  # at each index of the time step you input in facilitatory array
-        print("DONE!")
-        # repeating for trigger input
-        zero_x[1] = (zero_x[1] - start) * sr
+
         current_t = torch.zeros(len(timespan[1]))
         for j2 in zero_x[1]:
             current_t[int(j2)] = torch.ones(1)
-        print("DONE!")
         # pass spike train into tde simulator
 
         tau_tde = torch.tensor(0.001)
