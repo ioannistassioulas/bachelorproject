@@ -108,14 +108,15 @@ for i in range(len(metadata_tau)):  # start looking at each .wav file
 
         # To determine frequency band, FFT and find the strongest frequency peaks
 
+        band_gap = [480, 520]
         wave_fft = []
         for wave in waves:
             wave_f = fft.rfft(wave)
             freq_f = fft.fftfreq(len(wave), 1/sr)[:int(len(wave) // 2)]
 
             wave_f = wave_f[:len(freq_f)]
-            wave_f[(freq_f > 525)] = 0
-            wave_f[(freq_f < 475)] = 0
+            wave_f[(freq_f > band_gap[1])] = 0
+            wave_f[(freq_f < band_gap[0])] = 0
             new_wave = fft.irfft(wave_f)
             wave_fft.append(new_wave)
 
