@@ -8,6 +8,7 @@ import gc
 from scipy import signal
 import matplotlib.pyplot as plt
 import time as t
+from scipy import signal
 
 
 # start recording time
@@ -73,7 +74,7 @@ for i in range(len(angles)):  # by angle
 
         # pass everything into tde
         tau_tde = torch.tensor(0.001)
-        tau_mem = torch.tensor(1)
+        tau_mem = torch.tensor(0.01)
         mem, spk, fac, trg = tde.tde(tau_tde, tau_tde, tau_mem, torch.tensor(1/sr), torch.tensor(timer), current_f, current_t)
         spike_rec.append(torch.stack((mem[0], spk[0], fac[0], trg[0])))
 
@@ -115,9 +116,27 @@ for i in spike_mem:  # per frequency
         spk = j[1]
         fac = j[2]
         trg = j[3]
+        tiempo = []
 
-        spike_result.append(torch.sum(spk))
-
+        # calculate isi of spikes
+        for entry in range(len(spk)):
+            if spk[entry]:
+                tiempo.append(entry)
+        isi = np.diff(tiempo)
+        peaks = signal.argrelextrema(isi, np.greater)
+        # finding peak separation
+        # sign = np.sign(np.gradient(isi))  # show all sign changes
+        # peaks = 0
+        # for xdxd in sign:
+        #     if xdxd <= 0:
+        #         peaks += 1
+        # diff = peaks
+        # peaks = 0
+        diff = len(peaks[0])  # gaps btw groups therefore total groups = diff + 1
+        print(f"for angle {angles[z]} with freq {frequency[y]}: {diff + 1}")
+        plt.plot(np.arange(len(isi)), isi)
+        plt.show()
+        spike_result.append(torch.sum(spk) / diff + 1)
         z += 1
 
     plt.plot(itd_real, spike_result, label=f"Frequency = {frequency[y]}")
