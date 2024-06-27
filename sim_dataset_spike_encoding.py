@@ -9,6 +9,7 @@ from scipy import signal
 import matplotlib.pyplot as plt
 import time as t
 from scipy import signal
+from itertools import groupby
 
 
 # start recording time
@@ -59,7 +60,7 @@ for i in range(len(angles)):  # by angle
         err_m.append(np.std(time_differences))
 
         # transfer zeros into spike train
-        timer  = int(time * sr)
+        timer = int(time * sr)
 
         spike_data[0] = (spike_data[0]) * sr  # subtract by start time to keep length consistent with zeros
         current_f = torch.zeros(timer)
@@ -123,19 +124,16 @@ for i in spike_mem:  # per frequency
             if spk[entry]:
                 tiempo.append(entry)
         isi = np.diff(tiempo)
-        peaks = signal.argrelextrema(isi, np.greater)
-        # finding peak separation
-        # sign = np.sign(np.gradient(isi))  # show all sign changes
-        # peaks = 0
-        # for xdxd in sign:
-        #     if xdxd <= 0:
-        #         peaks += 1
-        # diff = peaks
-        # peaks = 0
+        isifil = np.array([k for k, g in groupby(isi)])
+        peaks = signal.argrelextrema(isifil, np.greater)
+
         diff = len(peaks[0])  # gaps btw groups therefore total groups = diff + 1
+
         print(f"for angle {angles[z]} with freq {frequency[y]}: {diff + 1}")
-        plt.plot(np.arange(len(isi)), isi)
-        plt.show()
+
+        # plt.plot(np.arange(len(isi)), isi)
+        # plt.plot(np.arange(len(isifil)), isifil)
+        # plt.show()
         spike_result.append(torch.sum(spk) / diff + 1)
         z += 1
 
