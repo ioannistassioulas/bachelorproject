@@ -25,9 +25,9 @@ home = os.getcwd()
 one_up = path.abspath(path.join(home, ".."))
 metadata_tau_loc = one_up + "/metadata_dev/"
 metadata_tau = os.listdir(metadata_tau_loc)
-
+metadata_tau.sort()
+print(metadata_tau)
 results = os.getcwd() + "/results"
-
 i = 0  # counter for sound files
 for file in metadata_tau:
     i += 1
@@ -36,14 +36,29 @@ for file in metadata_tau:
     meta_csv = pd.read_csv(meta)
 
     j = 0  # counter for sound events
-    for event in range(len(meta_csv.tranpose())):
+    for event in range(len(meta_csv)):
         j += 1
-        spikes_filename = f'{i}-{j}-LIF-Response.csv'
-        zeros_filename = f'{i}-{j}-Zero-Crossings.csv'
+        spikes_filename = f'/{i}-{j}-LIF-Response.csv'
+        zeros_filename = f'/{i}-{j}-Zero-Crossings.csv'
 
-        spikers = pd.read_csv(results + spikes_filename).to_numpy()
+        spikers = pd.read_csv(results + spikes_filename).to_numpy().transpose()
         zeros = pd.read_csv(results + zeros_filename).to_numpy().transpose()
-        print(zeros)
+        zeros_x = [zeros[1], zeros[2]]
+        spk = spikers[2]
+        spikers = []
+        tiempo = []
+
+        for entry in range(len(spk)):
+            if spk[entry]:
+                tiempo.append(entry)
+        isi = np.diff(tiempo)
+        isifil = np.array([k for k, g in groupby(isi)])
+        peaks = signal.argrelextrema(isifil, np.greater)
+        diff = len(peaks[0])  # gaps btw groups therefore total groups = diff + 1
+
+avg_spk_per_group = torch.sum(spk[0]) / (diff + 1)
+result = [avg_spk_per_group, angle]
+spikers.append(result)
 
 # code to determine average spikes per burst
 spikers = []

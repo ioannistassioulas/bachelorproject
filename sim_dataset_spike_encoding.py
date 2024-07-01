@@ -132,8 +132,8 @@ for i in spike_mem:  # per frequency
         print(f"for angle {angles[z]} with freq {frequency[y]}: {diff + 1}")
 
         # plt.plot(np.arange(len(isi)), isi)
-        # plt.plot(np.arange(len(isifil)), isifil)
-        # plt.show()
+        plt.plot(np.arange(len(isifil)), isifil)
+        plt.show()
         spike_result.append(torch.sum(spk) / diff + 1)
         z += 1
 

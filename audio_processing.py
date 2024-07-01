@@ -56,8 +56,8 @@ def filter_waves(sig, wc, band):
     left = sig[0]
     right = sig[1]
 
-    filtered_left = signal.sosfilt(sos, left)
-    filtered_right = signal.sosfilt(sos, right)
+    filtered_left = signal.sosfiltfilt(sos, left)
+    filtered_right = signal.sosfiltfilt(sos, right)
 
     waves = [filtered_left, filtered_right]
     return waves
