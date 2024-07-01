@@ -1,6 +1,8 @@
 import audio_processing as ap
 import tde_model as tde
 import matplotlib.pyplot as plt
+from itertools import groupby
+
 
 import os
 from os import path
@@ -32,7 +34,7 @@ print(f"Acquiring sound files done! Time elapsed = {t.time() - start_time}s")
 # array of all files most important info
 # setup of array : [audio file, sound_event, metadata of event]
 keypoints = []
-sr = 48000  # see table on report for justification
+# sr = 48000  # see table on report for justification
 
 # save everything to results file from now on
 home = home + '/results/'
@@ -45,15 +47,15 @@ for file in metadata_tau:  # parse through each audio event
     audio = audio_tau_loc + root_name + ".wav"
 
     # process audio file and record to other array
-    dummy, intensities = wavfile.read(audio)
+    sr, intensities = wavfile.read(audio)
     # q = 2  # decimation factor
     # samp = int(len(intensities) * sr / dummy)
     intensitiesBefore = np.array([intensities.transpose()[0], intensities.transpose()[2]])
     # # intensitiesAfter = np.array([signal.resample(intensitiesBefore[0], samp), signal.resample(intensitiesBefore[1], samp)])
-    a = {"IBL": intensitiesBefore[0], "IBR": intensitiesBefore[1],
-                              "IAL": intensitiesBefore[0], "IAR": intensitiesBefore[1]}
-    stereoCSV = pd.DataFrame.from_dict(a, orient='index').transpose()
-    stereoCSV.to_csv(home + f"Down-Sampling-{n+1}.csv")
+    # a = {"IBL": intensitiesBefore[0], "IBR": intensitiesBefore[1],
+    #                           "IAL": intensitiesBefore[0], "IAR": intensitiesBefore[1]}
+    # stereoCSV = pd.DataFrame.from_dict(a, orient='index').transpose()
+    # stereoCSV.to_csv(home + f"Down-Sampling-{n+1}.csv")
 
     # # start reading through specific csv file
     meta_csv = pd.read_csv(meta)
@@ -91,7 +93,7 @@ for i in range(len(metadata_tau)):  # start looking at each .wav file
 
     sig = [stereo['IAL'].to_numpy(), stereo['IAR'].to_numpy()]
     sig = [sig[0][~np.isnan(sig[0])], sig[1][~np.isnan(sig[1])]]
-
+    spikers = []
     for j in range(len(keypoints[i])):  # go through all sound events
         start = keypoints[i][j][0]
         end = keypoints[i][j][1]
@@ -131,7 +133,7 @@ for i in range(len(metadata_tau)):  # start looking at each .wav file
         # freq_info.to_csv(home + f"{i+1}-{j+1}-Fourier-Results.csv")
         # print(f"freq = {avg_freq}")
 
-        index = int(0.3 * sr)
+        index = int(0.1 * sr)
         # freq_to_check = 200
         # freq_band = [freq_to_check-5, freq_to_check+5]
         # # waves = ap.filter_waves(waves, freq_band, "bandpass")
@@ -157,39 +159,45 @@ for i in range(len(metadata_tau)):  # start looking at each .wav file
 
         # calculate all zero crossings
         zero_x, zero_y = ap.zero_crossing(wave_fft, sr)
-        zero_x[0] = zero_x[0] + start # fix problems with zeros and linmes crossing on the bar
-        zero_x[1] = zero_x[1] + start
-        zero_x, zero_y = ap.fix_broadcasting(zero_x, zero_y)
+        zero_x1, zero_y1 = ap.peak_difference(wave_fft, sr)
+        zero_x[0] = (zero_x[0]) * sr # fix problems with zeros and linmes crossing on the bar
+        zero_x[1] = (zero_x[1]) * sr
 
-        c = {"ZL": zero_x[0], "ZR": zero_x[1], "WL": wave_fft[0], "WR": wave_fft[1]}
+        zero_x1[0] = (zero_x1[0] + start) * sr
+        zero_x1[1] = (zero_x1[1] + start) * sr
+        zero_x, zero_y = ap.fix_broadcasting(zero_x, zero_y)
+        zero_x1, zero_y1 = ap.fix_broadcasting(zero_x1, zero_y1)
+
+        c = {"ZL": zero_x[0], "ZR": zero_x[1], "PL" : zero_x1[0], "PL" : zero_x1[1], "WL": wave_fft[0], "WR": wave_fft[1]}
         zero_data = pd.DataFrame.from_dict(c, orient="index").transpose()
         zero_data.to_csv(home + f"{i+1}-{j+1}-Zero-Crossings.csv")
         print(f"Zero crossing complete! Time elapsed = {t.time() - start_time}s")
 
-        fig, ax = plt.subplots(2)
-        ax[0].plot(np.arange(len(sig[0][:index])), sig[0][:index], label="left")
-        ax[0].plot(np.arange(len(sig[1][:index])), sig[1][:index], label="right")
-        ax[0].set_title("Unfiltered")
-        ax[0].legend()
-
-        zero_x[0] = (zero_x[0] - start) * sr  # subtract by start time such that length is consistent with timestep length
-        zero_x[1] = (zero_x[1] - start) * sr
-        ax[1].plot(np.arange(len(wave_fft[0])), wave_fft[0], color='red', label="left")
-        ax[1].plot(np.arange(len(wave_fft[1])), wave_fft[1], color='blue', label="right")
-        ax[1].scatter(zero_x[0], [0] * len(zero_x[0]), color='red')
-        ax[1].scatter(zero_x[1], [0] * len(zero_x[1]), color='blue')
-        ax[1].set_title("Filtered Sound Data")
-        ax[1].legend()
-        fig.suptitle(f"Filtered vs Unfiltered sound data. Band gap of 475, 525 Hz")
-        fig.text(0.5, 0.04, 'Time', ha='center')
-        fig.text(0.04, 0.5, 'Intensity', va='center', rotation='vertical')
-        plt.show()
+        # fig, ax = plt.subplots(2)
+        # ax[0].plot(np.arange(len(sig[0][:index])), sig[0][:index], label="left")
+        # ax[0].plot(np.arange(len(sig[1][:index])), sig[1][:index], label="right")
+        # ax[0].set_title("Unfiltered")
+        # ax[0].legend()
+        #
+        # zero_x[0] = (zero_x[0] - start) * sr  # subtract by start time such that length is consistent with timestep length
+        # zero_x[1] = (zero_x[1] - start) * sr
+        # ax[1].plot(np.arange(len(wave_fft[0])), wave_fft[0], color='red', label="left")
+        # ax[1].plot(np.arange(len(wave_fft[1])), wave_fft[1], color='blue', label="right")
+        # ax[1].scatter(zero_x[0], [0] * len(zero_x[0]), color='red')
+        # ax[1].scatter(zero_x[1], [0] * len(zero_x[1]), color='blue')
+        # ax[1].set_title("Filtered Sound Data")
+        # ax[1].legend()
+        # fig.suptitle(f"Filtered vs Unfiltered sound data. Band gap of 475, 525 Hz")
+        # fig.text(0.5, 0.04, 'Time', ha='center')
+        # fig.text(0.04, 0.5, 'Intensity', va='center', rotation='vertical')
+        # plt.show()
         #
         # itd = (np.array(zero_x[0]) - np.array(zero_x[1]))/sr
         # print(f"{np.mean(itd)} pm {np.std(itd)}")
         # print(f"Angle = {np.rad2deg(ap.angle_itd(0.084, np.mean(itd)))}")
         # # throw away to try and save a bit of memory
         # gc.collect()
+
         # transfer zeros into spike train
         current_f = torch.zeros(len(wave_fft[0]))
         print(len(wave_fft[0]))
@@ -201,44 +209,61 @@ for i in range(len(metadata_tau)):  # start looking at each .wav file
             current_t[int(j2)] = torch.ones(1)
 
         # pass spike train into tde simulator
-        tau_tde = torch.tensor(0.0004)
-        tau_mem = torch.tensor(0.0004)
+        tau_tde = torch.tensor(20/sr)
+        tau_mem = torch.tensor(20/sr)
 
         current_f = current_f[:index]
         current_t = current_t[:index]
 
         mem, spk, fac, trg = tde.tde(tau_tde, tau_tde, tau_mem, torch.tensor(1/sr), torch.tensor(len(current_f)), current_f, current_t)
 
-        fig, ax = plt.subplots(4)
-        ax[0].plot(np.arange(len(sig[0][:index])), sig[0][:index], label="left")
-        ax[0].plot(np.arange(len(sig[1][:index])), sig[1][:index], label="right")
-        ax[0].set_title("Unfiltered")
-        ax[0].legend()
+        tiempo = []
+        for entry in range(len(spk[0])):
+            if spk[0][entry]:
+                tiempo.append(entry)
+        isi = np.diff(tiempo)
+        isifil = np.array([k for k, g in groupby(isi)])
+        peaks = signal.argrelextrema(isifil, np.greater)
+        diff = len(peaks[0])  # gaps btw groups therefore total groups = diff + 1
 
-        ax[1].plot(np.arange(len(wave_fft[0])), wave_fft[0], color='red', label="left")
-        ax[1].plot(np.arange(len(wave_fft[1])), wave_fft[1], color='blue', label="right")
-        ax[1].scatter(zero_x[0], [0] * len(zero_x[0]), color='red')
-        ax[1].scatter(zero_x[1], [0] * len(zero_x[1]), color='blue')
-        ax[1].set_title("Filtered Sound Data")
-        ax[1].legend()
+        avg_spk_per_group = torch.sum(spk[0]) / (diff + 1)
+        result = [avg_spk_per_group, angle]
+        spikers.append(result)
 
-        ax[2].plot(np.arange(len(fac[0])), fac[0], label="facilitatory")
-        ax[2].plot(np.arange(len(trg[0])), trg[0], label="trigger")
-        ax[2].set_title("Facilitatory and Trigger Inputs")
-        ax[2].legend()
+        # fig, ax = plt.subplots(4)
+        # ax[0].plot(np.arange(len(sig[0][:index])), sig[0][:index], label="left")
+        # ax[0].plot(np.arange(len(sig[1][:index])), sig[1][:index], label="right")
+        # ax[0].set_title("Unfiltered")
+        # ax[0].legend()
+        #
+        # ax[1].plot(np.arange(len(wave_fft[0])), wave_fft[0], color='red', label="left")
+        # ax[1].plot(np.arange(len(wave_fft[1])), wave_fft[1], color='blue', label="right")
+        # ax[1].scatter(zero_x[0], [0] * len(zero_x[0]), color='red')
+        # ax[1].scatter(zero_x[1], [0] * len(zero_x[1]), color='blue')
+        # ax[1].set_title("Filtered Sound Data")
+        # ax[1].legend()
+        #
+        # ax[2].plot(np.arange(len(fac[0])), fac[0], label="facilitatory")
+        # ax[2].plot(np.arange(len(trg[0])), trg[0], label="trigger")
+        # ax[2].set_title("Facilitatory and Trigger Inputs")
+        # ax[2].legend()
+        #
+        # ax[3].plot(np.arange(len(mem[0])), mem[0], label="Membrane")
+        # ax[3].plot(np.arange(len(spk[0])), spk[0], label="Spikes")
+        # ax[3].axhline(y=0.7, color='blue', marker='_', label="threshold")
+        # ax[3].set_title("LIF Neuron and corresponding spikes")
+        # ax[3].legend()
+        #
+        # fig.suptitle(f"TDE activity for Sound File {i+1}, Sound Event {j+1}; Angle = {45 - angle}. Average per group = {avg_spk_per_group}")
+        #
+        # fig.text(0.5, 0.04, 'Time', ha='center')
+        # fig.text(0.04, 0.5, 'Potential', va='center', rotation='vertical')
+        #
+        # plt.show()
 
-        ax[3].plot(np.arange(len(mem[0])), mem[0], label="Membrane")
-        ax[3].plot(np.arange(len(spk[0])), spk[0], label="Spikes")
-        ax[3].axhline(y=0.7, color='blue', marker='_', label="threshold")
-        ax[3].set_title("LIF Neuron and corresponding spikes")
-        ax[3].legend()
-
-        fig.suptitle(f"TDE activity for Sound File {i+1}, Sound Event {j+1}; Angle = {45 - angle}")
-
-        fig.text(0.5, 0.04, 'Time', ha='center')
-        fig.text(0.04, 0.5, 'Potential', va='center', rotation='vertical')
-
-        plt.show()
+        # plt.plot(np.arange(len(isi)), isi)
+        # plt.plot(np.arange(len(isifil)), isifil)
+        # plt.show()
 
         d = {"Mem": mem[0], "Spk": spk[0], "Fac": fac[0], "Trg": trg[0]}
         tde_results = pd.DataFrame.from_dict(d, orient="index").transpose()
@@ -246,8 +271,8 @@ for i in range(len(metadata_tau)):  # start looking at each .wav file
         print(f"TDE simulation complete! TIme elapsed: {t.time() - start_time}s")
 
         # start counting all spikes
-        total_spike = torch.tensor(signal.convolve(spk[0], mem[0]))
-        spike_count = torch.sum(total_spike)
+        # total_spike = torch.tensor(signal.convolve(spk[0], mem[0]))
+        # spike_count = torch.sum(total_spike)
 
         # add spike count to final counter alongside the required angle
         # angle = 45 - angle
@@ -261,3 +286,6 @@ for i in range(len(metadata_tau)):  # start looking at each .wav file
         kounter += 1
         gc.collect()
 
+spikers = np.array(spikers).transpose()
+plt.scatter(spikers[1], spikers[0])
+plt.show()
