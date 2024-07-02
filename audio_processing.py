@@ -46,16 +46,17 @@ def generate_test_waves(angle, frequency, sr, time, distance):
 def filter_waves(sig, wc, band):
     """
     Apply butterworth digital signal filter on soundwaves
-    :param sig: audio file to be filtered
-    :param sr: sampling rate of the audio
+    :param sig: audio file to be filtered (2 channel)
+    :param wc: band gap to pass in
     :param band: default low-pass, but can change to high-pass 'hp' or bandpass 'bp'
     :return:
     """
-    sos = signal.butter(10, wc, fs=48000/2, btype=band, output='sos')
+    sos = signal.butter(10, wc, fs=48000, btype=band, output='sos')
 
     left = sig[0]
     right = sig[1]
 
+    # filter forwards and back to remove time delay
     filtered_left = signal.sosfiltfilt(sos, left)
     filtered_right = signal.sosfiltfilt(sos, right)
 

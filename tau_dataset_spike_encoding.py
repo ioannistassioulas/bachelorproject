@@ -106,20 +106,22 @@ for i in range(len(metadata_tau)):  # start looking at each .wav file
         # Practice filtering out all the data
         timespan = [np.arange(timespan_len), np.arange(timespan_len)]
         timespan, waves = ap.fix_broadcasting(timespan, sig)
+        timespan, waves = ap.set_recording(timespan, waves, start, end)
 
         # To determine frequency band, FFT and find the strongest frequency peaks
 
         band_gap = [480, 520]
-        wave_fft = []
-        for wave in waves:
-            wave_f = fft.rfft(wave)
-            freq_f = fft.fftfreq(len(wave), 1/sr)[:int(len(wave) // 2)]
-
-            wave_f = wave_f[:len(freq_f)]
-            wave_f[(freq_f > band_gap[1])] = 0
-            wave_f[(freq_f < band_gap[0])] = 0
-            new_wave = fft.irfft(wave_f)
-            wave_fft.append(new_wave)
+        wave_fft = ap.filter_waves(waves, band_gap, "bandpass")
+        # wave_fft = []
+        # for wave in waves:
+        #     wave_f = fft.rfft(wave)
+        #     freq_f = fft.fftfreq(len(wave), 1/sr)[:int(len(wave) // 2)]
+        #
+        #     wave_f = wave_f[:len(freq_f)]
+        #     wave_f[(freq_f > band_gap[1])] = 0
+        #     wave_f[(freq_f < band_gap[0])] = 0
+        #     new_wave = fft.irfft(wave_f)
+        #     wave_fft.append(new_wave)
 
         # l_max = np.max(wave_fft[0])
         # r_max = np.max(wave_fft[1])
@@ -147,7 +149,7 @@ for i in range(len(metadata_tau)):  # start looking at each .wav file
         # plt.plot(freq_fft, 2/len(waves[0]) * np.abs(wavefft[:int(len(waves[0]) // 2)]))
         # plt.show()
 
-        # only measure first 0.5 seconds
+        # only measure first 0.1 seconds
         wave_fft[0] = wave_fft[0][:index]
         wave_fft[1] = wave_fft[1][:index]
 
