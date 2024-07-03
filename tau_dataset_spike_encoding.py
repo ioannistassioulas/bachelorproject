@@ -93,6 +93,7 @@ for i in range(len(metadata_tau)):  # start looking at each .wav file
 
     sig = [stereo['IAL'].to_numpy(), stereo['IAR'].to_numpy()]
     sig = [sig[0][~np.isnan(sig[0])], sig[1][~np.isnan(sig[1])]]
+    print(sig)
     spikers = []
     for j in range(len(keypoints[i])):  # go through all sound events
         start = keypoints[i][j][0]
@@ -111,7 +112,7 @@ for i in range(len(metadata_tau)):  # start looking at each .wav file
         # To determine frequency band, FFT and find the strongest frequency peaks
 
         band_gap = [480, 520]
-        wave_fft = ap.filter_waves(waves, band_gap, "bandpass")
+        wave_fft = ap.filter_waves(sig, band_gap, "bandpass")
         # wave_fft = []
         # for wave in waves:
         #     wave_f = fft.rfft(wave)
@@ -138,10 +139,7 @@ for i in range(len(metadata_tau)):  # start looking at each .wav file
         wave_fft[0] = wave_fft[0][:index]
         wave_fft[1] = wave_fft[1][:index]
 
-        # wave_fft = signal.resample(wave_fft, int(len(waves) * 120000 / sr))  # upsample for clearer picture
-        # sr = 120000
-        # index = int(0.1*sr)
-        # wave_fft = wave_fft[:index]
+
         print(f"Filtering complete! Time elapsed = {t.time() - start_time}s")
 
         # calculate all zero crossings
@@ -150,8 +148,8 @@ for i in range(len(metadata_tau)):  # start looking at each .wav file
         zero_x[0] = (zero_x[0]) * sr # fix problems with zeros and linmes crossing on the bar
         zero_x[1] = (zero_x[1]) * sr
 
-        zero_x1[0] = (zero_x1[0] + start) * sr
-        zero_x1[1] = (zero_x1[1] + start) * sr
+        zero_x1[0] = (zero_x1[0] + start)
+        zero_x1[1] = (zero_x1[1] + start)
         zero_x, zero_y = ap.fix_broadcasting(zero_x, zero_y)
         zero_x1, zero_y1 = ap.fix_broadcasting(zero_x1, zero_y1)
 
@@ -166,15 +164,15 @@ for i in range(len(metadata_tau)):  # start looking at each .wav file
         ax[0].set_title("Unfiltered")
         ax[0].legend()
 
-        zero_x[0] = (zero_x[0] - start) * sr  # subtract by start time such that length is consistent with timestep length
-        zero_x[1] = (zero_x[1] - start) * sr
+        zero_x[0] = (zero_x[0] - start)  # subtract by start time such that length is consistent with timestep length
+        zero_x[1] = (zero_x[1] - start)
         ax[1].plot(np.arange(len(wave_fft[0])), wave_fft[0], color='red', label="left")
         ax[1].plot(np.arange(len(wave_fft[1])), wave_fft[1], color='blue', label="right")
         ax[1].scatter(zero_x[0], [0] * len(zero_x[0]), color='red')
         ax[1].scatter(zero_x[1], [0] * len(zero_x[1]), color='blue')
         ax[1].set_title("Filtered Sound Data")
         ax[1].legend()
-        fig.suptitle(f"Filtered vs Unfiltered sound data. Band gap of 475, 525 Hz")
+        fig.suptitle(f"Filtered vs Unfiltered sound data. Band gap of {band_gap}Hz")
         fig.text(0.5, 0.04, 'Time', ha='center')
         fig.text(0.04, 0.5, 'Intensity', va='center', rotation='vertical')
         plt.show()
@@ -196,8 +194,8 @@ for i in range(len(metadata_tau)):  # start looking at each .wav file
             current_t[int(j2)] = torch.ones(1)
 
         # pass spike train into tde simulator
-        tau_tde = torch.tensor(0.0005)
-        tau_mem = torch.tensor(0.0005)
+        tau_tde = torch.tensor(20/sr)
+        tau_mem = torch.tensor(20/sr)
 
         current_f = current_f[:index]
         current_t = current_t[:index]
@@ -217,40 +215,40 @@ for i in range(len(metadata_tau)):  # start looking at each .wav file
         result = [avg_spk_per_group, angle]
         spikers.append(result)
 
-        # fig, ax = plt.subplots(4)
-        # ax[0].plot(np.arange(len(sig[0][:index])), sig[0][:index], label="left")
-        # ax[0].plot(np.arange(len(sig[1][:index])), sig[1][:index], label="right")
-        # ax[0].set_title("Unfiltered")
-        # ax[0].legend()
-        #
-        # ax[1].plot(np.arange(len(wave_fft[0])), wave_fft[0], color='red', label="left")
-        # ax[1].plot(np.arange(len(wave_fft[1])), wave_fft[1], color='blue', label="right")
-        # ax[1].scatter(zero_x[0], [0] * len(zero_x[0]), color='red')
-        # ax[1].scatter(zero_x[1], [0] * len(zero_x[1]), color='blue')
-        # ax[1].set_title("Filtered Sound Data")
-        # ax[1].legend()
-        #
-        # ax[2].plot(np.arange(len(fac[0])), fac[0], label="facilitatory")
-        # ax[2].plot(np.arange(len(trg[0])), trg[0], label="trigger")
-        # ax[2].set_title("Facilitatory and Trigger Inputs")
-        # ax[2].legend()
-        #
-        # ax[3].plot(np.arange(len(mem[0])), mem[0], label="Membrane")
-        # ax[3].plot(np.arange(len(spk[0])), spk[0], label="Spikes")
-        # ax[3].axhline(y=0.7, color='blue', marker='_', label="threshold")
-        # ax[3].set_title("LIF Neuron and corresponding spikes")
-        # ax[3].legend()
-        #
-        # fig.suptitle(f"TDE activity for Sound File {i+1}, Sound Event {j+1}; Angle = {45 - angle}. Average per group = {avg_spk_per_group}")
-        #
-        # fig.text(0.5, 0.04, 'Time', ha='center')
-        # fig.text(0.04, 0.5, 'Potential', va='center', rotation='vertical')
-        #
-        # plt.show()
+        fig, ax = plt.subplots(4)
+        ax[0].plot(np.arange(len(sig[0][:index])), sig[0][:index], label="left")
+        ax[0].plot(np.arange(len(sig[1][:index])), sig[1][:index], label="right")
+        ax[0].set_title("Unfiltered")
+        ax[0].legend()
 
-        # plt.plot(np.arange(len(isi)), isi)
-        # plt.plot(np.arange(len(isifil)), isifil)
-        # plt.show()
+        ax[1].plot(np.arange(len(wave_fft[0])), wave_fft[0], color='red', label="left")
+        ax[1].plot(np.arange(len(wave_fft[1])), wave_fft[1], color='blue', label="right")
+        ax[1].scatter(zero_x[0], [0] * len(zero_x[0]), color='red')
+        ax[1].scatter(zero_x[1], [0] * len(zero_x[1]), color='blue')
+        ax[1].set_title("Filtered Sound Data")
+        ax[1].legend()
+
+        ax[2].plot(np.arange(len(fac[0])), fac[0], label="facilitatory")
+        ax[2].plot(np.arange(len(trg[0])), trg[0], label="trigger")
+        ax[2].set_title("Facilitatory and Trigger Inputs")
+        ax[2].legend()
+
+        ax[3].plot(np.arange(len(mem[0])), mem[0], label="Membrane")
+        ax[3].plot(np.arange(len(spk[0])), spk[0], label="Spikes")
+        ax[3].axhline(y=0.7, color='blue', marker='_', label="threshold")
+        ax[3].set_title("LIF Neuron and corresponding spikes")
+        ax[3].legend()
+
+        fig.suptitle(f"TDE activity for Sound File {i+1}, Sound Event {j+1}; Angle = {45 - angle}. Average per group = {avg_spk_per_group}")
+
+        fig.text(0.5, 0.04, 'Time', ha='center')
+        fig.text(0.04, 0.5, 'Potential', va='center', rotation='vertical')
+
+        plt.show()
+
+        plt.plot(np.arange(len(isi)), isi)
+        plt.plot(np.arange(len(isifil)), isifil)
+        plt.show()
 
         d = {"Mem": mem[0], "Spk": spk[0], "Fac": fac[0], "Trg": trg[0]}
         tde_results = pd.DataFrame.from_dict(d, orient="index").transpose()

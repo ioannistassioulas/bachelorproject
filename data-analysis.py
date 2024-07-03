@@ -73,6 +73,7 @@ for file in metadata_tau:
         avg_spk = [np.sum(spk) / (diff + 1)]
         data = np.concatenate((data, avg_spk)) # the final results, all metadata including average spiking
         finality = np.vstack((finality, data))  # add to final array of results
+        print(f"not dead! {i+1}")
     i += 1
 finality = finality[1:]
 
@@ -160,7 +161,7 @@ for i in one_meter_dic:  # go by elevation
     plt.plot(angles, p[0] * np.array(angles) + p[1], c=cor)
     plt.xlabel(r"Angles [$^{\circ}$]")
     plt.ylabel("Average Spikes per burst")
-    plt.title("")
+    plt.title(f"Spiking Reaction vs DOA, Radius = 1m")
     plt.legend()
     plt.show()
 
@@ -170,9 +171,14 @@ fit_value = np.array(fit_value_by_elevation).transpose()
 print(fit_value)
 plt.scatter(list(one_meter_dic.keys()), fit_value[0])
 plt.errorbar(list(one_meter_dic.keys()), fit_value[0], np.sqrt(fit_value[1]), linestyle='')
+
+p, V = np.polyfit(list(one_meter_dic.keys()), fit_value[0], 1, cov=True)
+plt.plot(list(one_meter_dic.keys()), p[0] * np.array(list(one_meter_dic.keys())) + p[1], label=f"({p[0]}+-{np.sqrt(V[0][0])})x+({p[1]}+-{np.sqrt(V[1][1])})")
 plt.xlabel("Elevation")
 plt.ylabel("Slope of Linear Fit")
 plt.title("Sound event from 1 meters")
+plt.grid()
+plt.legend()
 plt.show()
 # 2 meter
 
@@ -229,8 +235,10 @@ plt.scatter(list(two_meter_dic.keys()), fit_value[0])
 plt.errorbar(list(two_meter_dic.keys()), fit_value[0], np.sqrt(fit_value[1]), linestyle='')
 
 p, V = np.polyfit(list(two_meter_dic.keys()), fit_value[0], 1, cov=True)
-plt.plot(list(two_meter_dic.keys()), p[0] * list(two_meter_dic.keys()) + p[1], label = f"{}")
+plt.plot(list(two_meter_dic.keys()), p[0] * np.array(list(two_meter_dic.keys()))  + p[1], label=f"({p[0]}+-{np.sqrt(V[0][0])})x+({p[1]}+-{np.sqrt(V[1][1])})")
 plt.xlabel("Elevation")
 plt.ylabel("Slope of Linear Fit")
 plt.title("Sound event from 2 meters")
+plt.grid()
+plt.legend()
 plt.show()

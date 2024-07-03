@@ -74,8 +74,8 @@ for i in range(len(angles)):  # by angle
             current_t[int(n)] = torch.ones(1)
 
         # pass everything into tde
-        tau_tde = torch.tensor(0.0005)
-        tau_mem = torch.tensor(0.0005)
+        tau_tde = torch.tensor(0.001)
+        tau_mem = torch.tensor(0.001)
         mem, spk, fac, trg = tde.tde(tau_tde, tau_tde, tau_mem, torch.tensor(1/sr), torch.tensor(timer), current_f, current_t)
         spike_rec.append(torch.stack((mem[0], spk[0], fac[0], trg[0])))
 
@@ -149,10 +149,18 @@ for i in spike_mem:  # per frequency
     plt.legend()
     plt.show()
 
+    plt.plot(angles, spike_result, label=f"Frequency = {frequency[y]} Hz")
+    plt.scatter(angles, spike_result)
+    plt.xlabel(r"Angle$[^{\circ}]$")
+    plt.ylabel("# of Spikes")
+    plt.title("TDE performance rate")
+    plt.legend()
+    plt.show()
+
     y += 1
 
 # frequency 500, angle 0
-i = 1
+i = 0
 j = 0
 fig, ax = plt.subplots(2)
 
@@ -175,7 +183,7 @@ fig.text(0.04, 0.5, 'Potential', va='center', rotation='vertical')
 plt.show()
 
 # frequency 500, angle 60
-i = 1
+i = 0
 j = 12
 fig, ax = plt.subplots(2)
 
@@ -198,7 +206,7 @@ fig.text(0.04, 0.5, 'Potential', va='center', rotation='vertical')
 plt.show()
 
 # frequency 3500, angle 0
-i = 4
+i = 5
 j = 0
 fig, ax = plt.subplots(2)
 
