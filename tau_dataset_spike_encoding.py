@@ -130,24 +130,9 @@ for i in range(len(metadata_tau)):  # start looking at each .wav file
         # avg_freq = int(np.mean([main_freq_l, main_freq_r]))
 
         b = {"Left-FFT": wave_fft[0], "Right-FFT": wave_fft[1]}
-        #
-        # freq_info = pd.DataFrame.from_dict(b, orient="index").transpose()
-        # freq_info.to_csv(home + f"{i+1}-{j+1}-Fourier-Results.csv")
-        # print(f"freq = {avg_freq}")
+
 
         index = int(0.1 * sr)
-        # freq_to_check = 200
-        # freq_band = [freq_to_check-5, freq_to_check+5]
-        # # waves = ap.filter_waves(waves, freq_band, "bandpass")
-        # n = 100
-        # b = [1.0 / n] * n
-        # a = 1
-        # waves = signal.lfilter(b, a, waves)
-        # wavefft = fft.rfft(waves[0])
-        # print(wavefft)
-        # freq_fft = np.linspace(0.0, 0.5 * sr, int(len(waves[0]) // 2))
-        # plt.plot(freq_fft, 2/len(waves[0]) * np.abs(wavefft[:int(len(waves[0]) // 2)]))
-        # plt.show()
 
         # only measure first 0.1 seconds
         wave_fft[0] = wave_fft[0][:index]
@@ -175,30 +160,30 @@ for i in range(len(metadata_tau)):  # start looking at each .wav file
         zero_data.to_csv(home + f"{i+1}-{j+1}-Zero-Crossings.csv")
         print(f"Zero crossing complete! Time elapsed = {t.time() - start_time}s")
 
-        # fig, ax = plt.subplots(2)
-        # ax[0].plot(np.arange(len(sig[0][:index])), sig[0][:index], label="left")
-        # ax[0].plot(np.arange(len(sig[1][:index])), sig[1][:index], label="right")
-        # ax[0].set_title("Unfiltered")
-        # ax[0].legend()
-        #
-        # zero_x[0] = (zero_x[0] - start) * sr  # subtract by start time such that length is consistent with timestep length
-        # zero_x[1] = (zero_x[1] - start) * sr
-        # ax[1].plot(np.arange(len(wave_fft[0])), wave_fft[0], color='red', label="left")
-        # ax[1].plot(np.arange(len(wave_fft[1])), wave_fft[1], color='blue', label="right")
-        # ax[1].scatter(zero_x[0], [0] * len(zero_x[0]), color='red')
-        # ax[1].scatter(zero_x[1], [0] * len(zero_x[1]), color='blue')
-        # ax[1].set_title("Filtered Sound Data")
-        # ax[1].legend()
-        # fig.suptitle(f"Filtered vs Unfiltered sound data. Band gap of 475, 525 Hz")
-        # fig.text(0.5, 0.04, 'Time', ha='center')
-        # fig.text(0.04, 0.5, 'Intensity', va='center', rotation='vertical')
-        # plt.show()
-        #
-        # itd = (np.array(zero_x[0]) - np.array(zero_x[1]))/sr
-        # print(f"{np.mean(itd)} pm {np.std(itd)}")
-        # print(f"Angle = {np.rad2deg(ap.angle_itd(0.084, np.mean(itd)))}")
-        # # throw away to try and save a bit of memory
-        # gc.collect()
+        fig, ax = plt.subplots(2)
+        ax[0].plot(np.arange(len(sig[0][:index])), sig[0][:index], label="left")
+        ax[0].plot(np.arange(len(sig[1][:index])), sig[1][:index], label="right")
+        ax[0].set_title("Unfiltered")
+        ax[0].legend()
+
+        zero_x[0] = (zero_x[0] - start) * sr  # subtract by start time such that length is consistent with timestep length
+        zero_x[1] = (zero_x[1] - start) * sr
+        ax[1].plot(np.arange(len(wave_fft[0])), wave_fft[0], color='red', label="left")
+        ax[1].plot(np.arange(len(wave_fft[1])), wave_fft[1], color='blue', label="right")
+        ax[1].scatter(zero_x[0], [0] * len(zero_x[0]), color='red')
+        ax[1].scatter(zero_x[1], [0] * len(zero_x[1]), color='blue')
+        ax[1].set_title("Filtered Sound Data")
+        ax[1].legend()
+        fig.suptitle(f"Filtered vs Unfiltered sound data. Band gap of 475, 525 Hz")
+        fig.text(0.5, 0.04, 'Time', ha='center')
+        fig.text(0.04, 0.5, 'Intensity', va='center', rotation='vertical')
+        plt.show()
+
+        itd = (np.array(zero_x[0]) - np.array(zero_x[1]))/sr
+        print(f"{np.mean(itd)} pm {np.std(itd)}")
+        print(f"Angle = {np.rad2deg(ap.angle_itd(0.084, np.mean(itd)))}")
+        # throw away to try and save a bit of memory
+        gc.collect()
 
         # transfer zeros into spike train
         current_f = torch.zeros(len(wave_fft[0]))
@@ -211,8 +196,8 @@ for i in range(len(metadata_tau)):  # start looking at each .wav file
             current_t[int(j2)] = torch.ones(1)
 
         # pass spike train into tde simulator
-        tau_tde = torch.tensor(20/sr)
-        tau_mem = torch.tensor(20/sr)
+        tau_tde = torch.tensor(0.0005)
+        tau_mem = torch.tensor(0.0005)
 
         current_f = current_f[:index]
         current_t = current_t[:index]

@@ -17,7 +17,7 @@ start_time = t.time()
 
 # create sound waves
 
-frequency = np.arange(500, 5501, 1000)
+frequency = np.arange(500, 5501, 500)
 angles = np.arange(0, 81, 5)
 sr = 42000
 distance = 0.048
@@ -74,8 +74,8 @@ for i in range(len(angles)):  # by angle
             current_t[int(n)] = torch.ones(1)
 
         # pass everything into tde
-        tau_tde = torch.tensor(0.001)
-        tau_mem = torch.tensor(0.01)
+        tau_tde = torch.tensor(0.0005)
+        tau_mem = torch.tensor(0.0005)
         mem, spk, fac, trg = tde.tde(tau_tde, tau_tde, tau_mem, torch.tensor(1/sr), torch.tensor(timer), current_f, current_t)
         spike_rec.append(torch.stack((mem[0], spk[0], fac[0], trg[0])))
 
@@ -117,8 +117,8 @@ for i in spike_mem:  # per frequency
         spk = j[1]
         fac = j[2]
         trg = j[3]
-        tiempo = []
 
+        tiempo = []
         # calculate isi of spikes
         for entry in range(len(spk)):
             if spk[entry]:
@@ -132,14 +132,18 @@ for i in spike_mem:  # per frequency
         print(f"for angle {angles[z]} with freq {frequency[y]}: {diff + 1}")
 
         # plt.plot(np.arange(len(isi)), isi)
-        plt.plot(np.arange(len(isifil)), isifil)
-        plt.show()
+        # plt.plot(np.arange(len(isifil)), isifil)
+        # plt.ylabel("Inter Spike Interval (ISI)")
+        # plt.xlabel("Timestep")
+        # plt.title("Evolution of spike spacing per timestep")
+        # plt.grid()
+        # plt.show()
         spike_result.append(torch.sum(spk) / diff + 1)
         z += 1
 
-    plt.plot(itd_real, spike_result, label=f"Frequency = {frequency[y]}")
+    plt.plot(itd_real, spike_result, label=f"Frequency = {frequency[y]} Hz")
     plt.scatter(itd_real, spike_result)
-    plt.xlabel("$\Delta t$")
+    plt.xlabel("$\Delta t$ [s]")
     plt.ylabel("# of Spikes")
     plt.title("TDE performance rate")
     plt.legend()
@@ -147,8 +151,8 @@ for i in spike_mem:  # per frequency
 
     y += 1
 
-# frequency 550, angle 0
-i = 0
+# frequency 500, angle 0
+i = 1
 j = 0
 fig, ax = plt.subplots(2)
 
@@ -170,8 +174,8 @@ fig.text(0.04, 0.5, 'Potential', va='center', rotation='vertical')
 
 plt.show()
 
-# frequency 550, angle 60
-i = 0
+# frequency 500, angle 60
+i = 1
 j = 12
 fig, ax = plt.subplots(2)
 
@@ -194,7 +198,7 @@ fig.text(0.04, 0.5, 'Potential', va='center', rotation='vertical')
 plt.show()
 
 # frequency 3500, angle 0
-i = 3
+i = 4
 j = 0
 fig, ax = plt.subplots(2)
 
