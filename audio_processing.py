@@ -57,8 +57,8 @@ def filter_waves(sig, wc, band):
     right = sig[1]
 
     # filter forwards and back to remove time delay
-    filtered_left = signal.sosfiltfilt(sos, left)
-    filtered_right = signal.sosfiltfilt(sos, right)
+    filtered_left = signal.sosfiltfilt(sos, left, axis=0)
+    filtered_right = signal.sosfiltfilt(sos, right, axis=0)
 
     waves = [filtered_left, filtered_right]
     return waves

@@ -52,10 +52,10 @@ for file in metadata_tau:  # parse through each audio event
     # samp = int(len(intensities) * sr / dummy)
     intensitiesBefore = np.array([intensities.transpose()[0], intensities.transpose()[2]])
     # # intensitiesAfter = np.array([signal.resample(intensitiesBefore[0], samp), signal.resample(intensitiesBefore[1], samp)])
-    # a = {"IBL": intensitiesBefore[0], "IBR": intensitiesBefore[1],
-    #                           "IAL": intensitiesBefore[0], "IAR": intensitiesBefore[1]}
-    # stereoCSV = pd.DataFrame.from_dict(a, orient='index').transpose()
-    # stereoCSV.to_csv(home + f"Down-Sampling-{n+1}.csv")
+    a = {"IBL": intensitiesBefore[0], "IBR": intensitiesBefore[1],
+                              "IAL": intensitiesBefore[0], "IAR": intensitiesBefore[1]}
+    stereoCSV = pd.DataFrame.from_dict(a, orient='index').transpose()
+    stereoCSV.to_csv(home + f"Down-Sampling-{n+1}.csv")
 
     # # start reading through specific csv file
     meta_csv = pd.read_csv(meta)
@@ -93,7 +93,7 @@ for i in range(len(metadata_tau)):  # start looking at each .wav file
 
     sig = [stereo['IAL'].to_numpy(), stereo['IAR'].to_numpy()]
     sig = [sig[0][~np.isnan(sig[0])], sig[1][~np.isnan(sig[1])]]
-    print(sig)
+    print(len(sig[0]))
     spikers = []
     for j in range(len(keypoints[i])):  # go through all sound events
         start = keypoints[i][j][0]
@@ -101,18 +101,21 @@ for i in range(len(metadata_tau)):  # start looking at each .wav file
         elevation = keypoints[i][j][2]
         angle = keypoints[i][j][3]
         distance = keypoints[i][j][4]
-
+        print(start)
+        print(end)
         timespan_len = int((end - start) * sr)
 
         # Practice filtering out all the data
-        timespan = [np.arange(timespan_len), np.arange(timespan_len)]
+        timespan = [np.arange(len(sig[0])), np.arange(len(sig[1]))]
         timespan, waves = ap.fix_broadcasting(timespan, sig)
-        timespan, waves = ap.set_recording(timespan, waves, start, end)
-
+        print(len(waves[0]))
+        timespan, waves = ap.set_recording(timespan, waves, start * sr, end * sr)
+        print(len(waves[0]))
+        print(len(waves[0]) / sr == end - start)
         # To determine frequency band, FFT and find the strongest frequency peaks
 
         band_gap = [480, 520]
-        wave_fft = ap.filter_waves(sig, band_gap, "bandpass")
+        wave_fft = ap.filter_waves(waves, band_gap, "bandpass")
         # wave_fft = []
         # for wave in waves:
         #     wave_f = fft.rfft(wave)
@@ -144,42 +147,15 @@ for i in range(len(metadata_tau)):  # start looking at each .wav file
 
         # calculate all zero crossings
         zero_x, zero_y = ap.zero_crossing(wave_fft, sr)
-        zero_x1, zero_y1 = ap.peak_difference(wave_fft, sr)
         zero_x[0] = (zero_x[0]) * sr # fix problems with zeros and linmes crossing on the bar
         zero_x[1] = (zero_x[1]) * sr
 
-        zero_x1[0] = (zero_x1[0] + start)
-        zero_x1[1] = (zero_x1[1] + start)
         zero_x, zero_y = ap.fix_broadcasting(zero_x, zero_y)
-        zero_x1, zero_y1 = ap.fix_broadcasting(zero_x1, zero_y1)
 
-        c = {"ZL": zero_x[0], "ZR": zero_x[1], "PL" : zero_x1[0], "PL" : zero_x1[1], "WL": wave_fft[0], "WR": wave_fft[1]}
+        c = {"ZL": zero_x[0], "ZR": zero_x[1], "WL": wave_fft[0], "WR": wave_fft[1]}
         zero_data = pd.DataFrame.from_dict(c, orient="index").transpose()
         zero_data.to_csv(home + f"{i+1}-{j+1}-Zero-Crossings.csv")
         print(f"Zero crossing complete! Time elapsed = {t.time() - start_time}s")
-
-        fig, ax = plt.subplots(2)
-        ax[0].plot(np.arange(len(sig[0][:index])), sig[0][:index], label="left")
-        ax[0].plot(np.arange(len(sig[1][:index])), sig[1][:index], label="right")
-        ax[0].set_title("Unfiltered")
-        ax[0].legend()
-
-        zero_x[0] = (zero_x[0] - start)  # subtract by start time such that length is consistent with timestep length
-        zero_x[1] = (zero_x[1] - start)
-        ax[1].plot(np.arange(len(wave_fft[0])), wave_fft[0], color='red', label="left")
-        ax[1].plot(np.arange(len(wave_fft[1])), wave_fft[1], color='blue', label="right")
-        ax[1].scatter(zero_x[0], [0] * len(zero_x[0]), color='red')
-        ax[1].scatter(zero_x[1], [0] * len(zero_x[1]), color='blue')
-        ax[1].set_title("Filtered Sound Data")
-        ax[1].legend()
-        fig.suptitle(f"Filtered vs Unfiltered sound data. Band gap of {band_gap}Hz")
-        fig.text(0.5, 0.04, 'Time', ha='center')
-        fig.text(0.04, 0.5, 'Intensity', va='center', rotation='vertical')
-        plt.show()
-
-        itd = (np.array(zero_x[0]) - np.array(zero_x[1]))/sr
-        print(f"{np.mean(itd)} pm {np.std(itd)}")
-        print(f"Angle = {np.rad2deg(ap.angle_itd(0.084, np.mean(itd)))}")
         # throw away to try and save a bit of memory
         gc.collect()
 
@@ -216,8 +192,8 @@ for i in range(len(metadata_tau)):  # start looking at each .wav file
         spikers.append(result)
 
         fig, ax = plt.subplots(4)
-        ax[0].plot(np.arange(len(sig[0][:index])), sig[0][:index], label="left")
-        ax[0].plot(np.arange(len(sig[1][:index])), sig[1][:index], label="right")
+        ax[0].plot(np.arange(len(sig[0][int(start* sr) : int((start*sr + index))])), sig[0][int(start* sr) : int((start*sr + index))], label="left")
+        ax[0].plot(np.arange(len(sig[1][int(start* sr) : int((start*sr + index))])), sig[1][int(start* sr) : int((start*sr + index))], label="right")
         ax[0].set_title("Unfiltered")
         ax[0].legend()
 
@@ -244,10 +220,6 @@ for i in range(len(metadata_tau)):  # start looking at each .wav file
         fig.text(0.5, 0.04, 'Time', ha='center')
         fig.text(0.04, 0.5, 'Potential', va='center', rotation='vertical')
 
-        plt.show()
-
-        plt.plot(np.arange(len(isi)), isi)
-        plt.plot(np.arange(len(isifil)), isifil)
         plt.show()
 
         d = {"Mem": mem[0], "Spk": spk[0], "Fac": fac[0], "Trg": trg[0]}
