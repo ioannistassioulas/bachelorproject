@@ -48,6 +48,7 @@ for file in metadata_tau:
     j = 0  # counter for sound events
     for event in range(len(meta_csv)):
         data = meta_csv.to_numpy()[event][1:]  # keep metadata handy
+
         j += 1
         spikes_filename = f'/{rev[i]}-{j}-LIF-Response.csv'
         zeros_filename = f'/{rev[i]}-{j}-Zero-Crossings.csv'
@@ -128,20 +129,18 @@ for i in one_meter_dic:  # go by elevation
     spe = res.transpose()[1]
 
     res_dict = {
-        90: [],
-        80: [],
-        70: [],
-        60: [],
-        50: [],
-        40: [],
-        30: [],
-        20: [],
-        10: [],
-         0: []
+         40: [],
+         30: [],
+         20: [],
+         10: [],
+          0: [],
+        -10: [],
+        -20: [],
+        -30: []
     }
 
-    start_angle = theta <= 90
-    end_angle = theta >= 0
+    start_angle = theta <= 40
+    end_angle = theta >= -30
 
     theta = theta[np.logical_and(start_angle, end_angle)]
     spe = spe[np.logical_and(start_angle, end_angle)]
@@ -172,8 +171,8 @@ print(fit_value)
 plt.scatter(list(one_meter_dic.keys()), fit_value[0])
 plt.errorbar(list(one_meter_dic.keys()), fit_value[0], np.sqrt(fit_value[1]), linestyle='')
 
-p, V = np.polyfit(list(one_meter_dic.keys()), fit_value[0], 1, cov=True)
-plt.plot(list(one_meter_dic.keys()), p[0] * np.array(list(one_meter_dic.keys())) + p[1], label=f"({p[0]}+-{np.sqrt(V[0][0])})x+({p[1]}+-{np.sqrt(V[1][1])})")
+p, V = np.polyfit(list(one_meter_dic.keys()), fit_value[0], 2, cov=True)
+plt.plot(list(one_meter_dic.keys()), p[0] * np.array(list(one_meter_dic.keys()))**2 + p[1] * np.array(list(one_meter_dic.keys())) + p[2], label=f"({p[0]}+-{np.sqrt(V[0][0])})x+({p[1]}+-{np.sqrt(V[1][1])})")
 plt.xlabel("Elevation")
 plt.ylabel("Slope of Linear Fit")
 plt.title("Sound event from 1 meters")
@@ -191,20 +190,18 @@ for i in two_meter_dic:  # go by elevation
     spe = res.transpose()[1]
 
     res_dict = {
-        90: [],
-        80: [],
-        70: [],
-        60: [],
-        50: [],
-        40: [],
-        30: [],
-        20: [],
-        10: [],
-         0: []
+         40: [],
+         30: [],
+         20: [],
+         10: [],
+          0: [],
+        -10: [],
+        -20: [],
+        -30: []
     }
 
-    start_angle = theta <= 90
-    end_angle = theta >= 0
+    start_angle = theta <= 40
+    end_angle = theta >= -30
 
     theta = theta[np.logical_and(start_angle, end_angle)]
     spe = spe[np.logical_and(start_angle, end_angle)]
@@ -234,8 +231,8 @@ fit_value = np.array(fit_value_by_elevation).transpose()
 plt.scatter(list(two_meter_dic.keys()), fit_value[0])
 plt.errorbar(list(two_meter_dic.keys()), fit_value[0], np.sqrt(fit_value[1]), linestyle='')
 
-p, V = np.polyfit(list(two_meter_dic.keys()), fit_value[0], 1, cov=True)
-plt.plot(list(two_meter_dic.keys()), p[0] * np.array(list(two_meter_dic.keys()))  + p[1], label=f"({p[0]}+-{np.sqrt(V[0][0])})x+({p[1]}+-{np.sqrt(V[1][1])})")
+p, V = np.polyfit(list(two_meter_dic.keys()), fit_value[0], 2, cov=True)
+plt.plot(list(two_meter_dic.keys()), p[0] * np.array(list(two_meter_dic.keys()))**2 + p[1] * np.array(list(two_meter_dic.keys())) + p[2], label=f"({p[0]}+-{np.sqrt(V[0][0])})x+({p[1]}+-{np.sqrt(V[1][1])})")
 plt.xlabel("Elevation")
 plt.ylabel("Slope of Linear Fit")
 plt.title("Sound event from 2 meters")
