@@ -90,23 +90,23 @@ for i in finality:
 # sort based on elevation
 
 one_meter_dic = {
-    40 : [],
-    30 : [],
-    20 : [],
-    10 : [],
-     0 : [],
-   -10 : [],
-   -20 : [],
-   -30 : [],
-   -40 : [],
+     40: [],
+     30: [],
+     20: [],
+     10: [],
+      0: [],
+    -10: [],
+    -20: [],
+    -30: [],
+    -40: [],
 }
 
 two_meter_dic = {
-    20  : [],
-    10  : [],
-    0   : [],
-    -10 : [],
-    -20 : []
+      20: [],
+      10: [],
+       0: [],
+     -10: [],
+     -20: []
 }
 
 for input in one_meter:
@@ -161,6 +161,8 @@ for i in one_meter_dic:  # go by elevation
     plt.xlabel(r"Angles [$^{\circ}$]")
     plt.ylabel("Average Spikes per burst")
     plt.title(f"Spiking Reaction vs DOA, Radius = 1m")
+
+    plt.grid()
     plt.legend()
     plt.show()
 
@@ -172,10 +174,11 @@ plt.scatter(list(one_meter_dic.keys()), fit_value[0])
 plt.errorbar(list(one_meter_dic.keys()), fit_value[0], np.sqrt(fit_value[1]), linestyle='')
 
 p, V = np.polyfit(list(one_meter_dic.keys()), fit_value[0], 2, cov=True)
-plt.plot(list(one_meter_dic.keys()), p[0] * np.array(list(one_meter_dic.keys()))**2 + p[1] * np.array(list(one_meter_dic.keys())) + p[2], label=f"({p[0]}+-{np.sqrt(V[0][0])})x+({p[1]}+-{np.sqrt(V[1][1])})")
+plt.plot(list(one_meter_dic.keys()), p[0] * np.array(list(one_meter_dic.keys()))**2 + p[1] * np.array(list(one_meter_dic.keys())) + p[2])
 plt.xlabel("Elevation")
 plt.ylabel("Slope of Linear Fit")
-plt.title("Sound event from 1 meters")
+plt.title("Sound event from 1m")
+
 plt.grid()
 plt.legend()
 plt.show()
@@ -221,7 +224,9 @@ for i in two_meter_dic:  # go by elevation
     plt.plot(angles, p[0] * np.array(angles) + p[1], c=cor)
     plt.xlabel(r"Angles [$^{\circ}$]")
     plt.ylabel("Average Spikes per burst")
-    plt.title("")
+    plt.title("Spiking Reaction vs DOA, Radius = 2m")
+
+    plt.grid()
     plt.legend()
     plt.show()
 
@@ -232,10 +237,11 @@ plt.scatter(list(two_meter_dic.keys()), fit_value[0])
 plt.errorbar(list(two_meter_dic.keys()), fit_value[0], np.sqrt(fit_value[1]), linestyle='')
 
 p, V = np.polyfit(list(two_meter_dic.keys()), fit_value[0], 2, cov=True)
-plt.plot(list(two_meter_dic.keys()), p[0] * np.array(list(two_meter_dic.keys()))**2 + p[1] * np.array(list(two_meter_dic.keys())) + p[2], label=f"({p[0]}+-{np.sqrt(V[0][0])})x+({p[1]}+-{np.sqrt(V[1][1])})")
+plt.plot(list(two_meter_dic.keys()), p[0] * np.array(list(two_meter_dic.keys()))**2 + p[1] * np.array(list(two_meter_dic.keys())) + p[2])
 plt.xlabel("Elevation")
 plt.ylabel("Slope of Linear Fit")
-plt.title("Sound event from 2 meters")
+plt.title("Sound event from 2m")
+
 plt.grid()
 plt.legend()
 plt.show()
