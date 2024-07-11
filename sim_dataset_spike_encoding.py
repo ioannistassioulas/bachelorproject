@@ -98,9 +98,9 @@ print(f"Finished encoding! Time elapsed:{t.time() - start_time}s")
 
 theta = np.cos(np.deg2rad(angles))
 # make plot of itd
-plt.scatter(angles, itd_real, label="Encoded ITD", color="black")
-plt.plot(angles, distance / 343 * np.cos(np.deg2rad(angles)), label=r'$\frac{d}{v}\cos{(\theta)}$', color="red")
-plt.ylabel(r'$\Delta t$')
+plt.scatter(angles, np.array(itd_real) * 1000, label="Encoded ITD", color="black")
+plt.plot(angles, (distance / 343 * np.cos(np.deg2rad(angles))) * 1000, label=r'$\frac{d}{v}\cos{(\theta)}$', color="red")
+plt.ylabel(r'$\Delta t$ [ms]')
 plt.xlabel(r'$\theta$')
 plt.title("ITD vs Angle")
 
@@ -143,10 +143,10 @@ for i in spike_mem:  # per frequency
         spike_result.append(torch.sum(spk) / diff + 1)
         z += 1
 
-    plt.plot(itd_real, spike_result, label=f"Frequency = {frequency[y]} Hz")
-    plt.scatter(itd_real, spike_result)
-    plt.xlabel("$\Delta t$ [s]")
-    plt.ylabel("# of Spikes")
+    plt.plot(np.array(itd_real) * 1000, spike_result, label=f"Frequency = {frequency[y]} Hz")
+    plt.scatter(np.array(itd_real) * 1000, spike_result)
+    plt.xlabel("$\Delta t$ [ms]")
+    plt.ylabel("Average Spikes per burst")
     plt.title("TDE performance rate")
 
     plt.grid()
@@ -156,7 +156,7 @@ for i in spike_mem:  # per frequency
     plt.plot(angles, spike_result, label=f"Frequency = {frequency[y]} Hz")
     plt.scatter(angles, spike_result)
     plt.xlabel(r"Angle$[^{\circ}]$")
-    plt.ylabel("# of Spikes")
+    plt.ylabel("Average Spikes per burst")
     plt.title("TDE performance rate")
 
     plt.grid()

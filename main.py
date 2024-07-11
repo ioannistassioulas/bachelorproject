@@ -12,13 +12,15 @@ d = 0.048
 sample = (v / d) * (1 / np.cos(np.deg2rad(angles)))
 print(sample)
 
-plt.scatter(angles, sample, color="black")
-plt.plot(angles, sample, label="Required sample rate", color="black")
-plt.axhline(48000, label="Native sample rate", color="blue")
+plt.scatter(angles, sample / 1000, color="black")
+plt.plot(angles, sample / 1000, label="Required sample rate", color="black")
+plt.axhline(48, label="Native sample rate", color="blue")
 coordinates = r'($\theta$, $\Delta t^{-1}$)'
 plt.xlabel("Direction of Arrival " + r'$\theta$ [$^{\circ}$]')
-plt.ylabel("Sample rate " + r'$\Delta t^{-1} [Hz]$')
+plt.ylabel("Sample rate " + r'$\Delta t^{-1} [kHz]$')
 plt.title("Minimal sample rate for time difference encoding")
+
+plt.grid()
 plt.legend()
 plt.show()
 
@@ -40,25 +42,25 @@ plt.show()
 #
 # plt.legend()
 # plt.show()
-
-home = home + '/results/'
-stereo = pd.read_csv(home + f"Down-Sampling-{i+1}.csv")
-
-sig = [stereo['IAL'].to_numpy(), stereo['IAR'].to_numpy()]
-sig = [sig[0][~np.isnan(sig[0])], sig[1][~np.isnan(sig[1])]]
-
-fig, ax = plt.subplots(2)
-ax[0].plot(np.arange(len(sig[0][int(start* sr) : int((start*sr + index))])), sig[0][int(start* sr) : int((start*sr + index))], label="left")
-ax[0].plot(np.arange(len(sig[1][int(start* sr) : int((start*sr + index))])), sig[1][int(start* sr) : int((start*sr + index))], label="right")
-ax[0].set_title("Unfiltered")
-ax[0].legend()
-
-ax[1].plot(np.arange(len(wave_fft[0])), wave_fft[0], color='red', label="left")
-ax[1].plot(np.arange(len(wave_fft[1])), wave_fft[1], color='blue', label="right")
-ax[1].scatter(zero_x[0], [0] * len(zero_x[0]), color='red')
-ax[1].scatter(zero_x[1], [0] * len(zero_x[1]), color='blue')
-ax[1].set_title("Filtered Sound Data")
-ax[1].legend()
+#
+# home = home + '/results/'
+# stereo = pd.read_csv(home + f"Down-Sampling-{i+1}.csv")
+#
+# sig = [stereo['IAL'].to_numpy(), stereo['IAR'].to_numpy()]
+# sig = [sig[0][~np.isnan(sig[0])], sig[1][~np.isnan(sig[1])]]
+#
+# fig, ax = plt.subplots(2)
+# ax[0].plot(np.arange(len(sig[0][int(start* sr) : int((start*sr + index))])), sig[0][int(start* sr) : int((start*sr + index))], label="left")
+# ax[0].plot(np.arange(len(sig[1][int(start* sr) : int((start*sr + index))])), sig[1][int(start* sr) : int((start*sr + index))], label="right")
+# ax[0].set_title("Unfiltered")
+# ax[0].legend()
+#
+# ax[1].plot(np.arange(len(wave_fft[0])), wave_fft[0], color='red', label="left")
+# ax[1].plot(np.arange(len(wave_fft[1])), wave_fft[1], color='blue', label="right")
+# ax[1].scatter(zero_x[0], [0] * len(zero_x[0]), color='red')
+# ax[1].scatter(zero_x[1], [0] * len(zero_x[1]), color='blue')
+# ax[1].set_title("Filtered Sound Data")
+# ax[1].legend()
 
 # spikers = np.array(spikers).transpose()
 # plt.scatter(spikers[1], spikers[0])
